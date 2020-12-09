@@ -20,15 +20,17 @@ login_manager.init_app(app=app)
 def load_user(user_name):
     return User.get(user_name)
 
-
+# 主页，指向登录页、注册页、信息页、反馈页
 @app.route('/', methods=['GET', 'POST'])
 def home():
     return render_template("home.html")
 
+# 登陆页
 @app.route('/signin', methods=['GET'])
 def signin_form():
     return render_template("login.html")
 
+# 登陆验证
 @app.route('/signin', methods=['POST'])
 def signin():
     name = request.form['username']
@@ -55,6 +57,10 @@ def index_page():
 @login_required
 def logout():
     logout_user()
+    return redirect('/signin')
+
+@login_manager.unauthorized_handler
+def unauthorized_handler():
     return redirect('/signin')
 
 @app.route('/signup', methods=['GET'])
