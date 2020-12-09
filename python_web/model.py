@@ -15,7 +15,8 @@ class User(UserMixin):
     def password(self, password):
         """save username and password hash to sqlite"""
         self.password_hash = generate_password_hash(password)
-        conn = sqlite3.connect("test.db")
+        # 应修改为自己电脑上.db文件的地址
+        conn = sqlite3.connect("../../../Python/test.db")
         cursor = conn.cursor()
         cursor.execute('''
             SELECT COUNT(*)
@@ -49,7 +50,8 @@ class User(UserMixin):
         the sqlite, return password hash.
         None: if there is no corresponding user, return None.
         """
-        conn = sqlite3.connect("test.db")
+        # 应修改为自己电脑上.db文件的地址
+        conn = sqlite3.connect("../../../Python/test.db")
         cursor = conn.cursor()
         cursor.execute('''
             SELECT *
@@ -69,7 +71,8 @@ class User(UserMixin):
         """get username from sqlite
         """
         if self.username is not None:
-            conn = sqlite3.connect("test.db")
+            # 应修改为自己电脑上.db文件的地址
+            conn = sqlite3.connect("../../../Python/test.db")
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT COUNT(*)
@@ -90,7 +93,8 @@ class User(UserMixin):
         """
         if user_name is None:
             return None
-        conn = sqlite3.connect("test.db")
+        # 应修改为自己电脑上.db文件的地址
+        conn = sqlite3.connect("../../../Python/test.db")
         cursor = conn.cursor()
         cursor.execute('''
             SELECT COUNT(*)

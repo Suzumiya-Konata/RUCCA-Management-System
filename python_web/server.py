@@ -74,6 +74,7 @@ def signup_form():
 
 @app.route('/signup', methods=['POST'])
 def signup():
+    # 应修改为自己电脑上.db文件的地址
     conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
     name = request.form['new_username']
@@ -113,6 +114,7 @@ def search_form():
 
 @app.route('/search', methods=['POST'])
 def search():
+    # 应修改为自己电脑上.db文件的地址
     conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
     name = request.form['username']
