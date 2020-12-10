@@ -6,6 +6,7 @@ import sqlite3
 class User(UserMixin):
     def __init__(self, username):
         self.username = username
+        self.id = int(self.get_id())
 
     @property
     def password(self):
@@ -16,25 +17,25 @@ class User(UserMixin):
         """save username and password hash to sqlite"""
         self.password_hash = generate_password_hash(password)
         # 应修改为自己电脑上.db文件的地址
-        conn = sqlite3.connect("../../../Python/test.db")
+        conn = sqlite3.connect("../../RUCCA.db")
         cursor = conn.cursor()
         cursor.execute('''
             SELECT COUNT(*)
-            FROM user
-            WHERE username = ?
-        ''', (self.username,))
+            FROM person_info
+            WHERE id = ?
+        ''', (self.id,))
         value = cursor.fetchone()[0]
         if value == 0:
             cursor.execute('''
-                INSERT INTO user
+                INSERT INTO person_info(username, password_hash)
                 Values(?,?)
                 ''', (self.username, self.password_hash,))
         else:
             cursor.execute('''
-                UPDATE user
+                UPDATE person_info
                 SET password = ?
-                WHERE username = ?
-            ''', (self.password_hash, self.username,))
+                WHERE id = ?
+            ''', (self.password_hash, self.id,))
         conn.commit()
         conn.close()
 
@@ -51,18 +52,18 @@ class User(UserMixin):
         None: if there is no corresponding user, return None.
         """
         # 应修改为自己电脑上.db文件的地址
-        conn = sqlite3.connect("../../../Python/test.db")
+        conn = sqlite3.connect("../../RUCCA.db")
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT *
-            FROM user
-            WHERE username = ?
-        ''', (self.username,))
+            SELECT password_hash
+            FROM person_info
+            WHERE id = ?
+        ''', (self.id,))
         value = cursor.fetchall()
         if len(value) == 0:
             return None
         else:
-            return value[0][1]
+            return value[0][0]
         conn.commit()
         conn.close()
         
@@ -72,38 +73,38 @@ class User(UserMixin):
         """
         if self.username is not None:
             # 应修改为自己电脑上.db文件的地址
-            conn = sqlite3.connect("../../../Python/test.db")
+            conn = sqlite3.connect("../../RUCCA.db")
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT COUNT(*)
-                FROM user
+                SELECT id
+                FROM person_info
                 WHERE username = ?
             ''', (self.username,))
-            value = cursor.fetchone()[0]
+            value = cursor.fetchone()
             conn.commit()
             conn.close()
-            if value != 0:
-                return self.username
+            if value is not None:
+                return str(value[0])
         return None
 
     @staticmethod
-    def get(user_name):
+    def get(user_id):
         """try to return user_name corresponding User object.
         This method is used by load_user callback function
         """
-        if user_name is None:
+        if user_id is None:
             return None
         # 应修改为自己电脑上.db文件的地址
-        conn = sqlite3.connect("../../../Python/test.db")
+        conn = sqlite3.connect("../../RUCCA.db")
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT COUNT(*)
-            FROM user
-            WHERE username = ?
-        ''', (user_name,))
-        value = cursor.fetchone()[0]
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+        ''', (user_id,))
+        value = cursor.fetchall()
         conn.commit()
         conn.close()
-        if value != 0:
-            return User(user_name)
+        if len(value) != 0:
+            return User(value[0][0])
         return None

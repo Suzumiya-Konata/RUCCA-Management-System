@@ -17,8 +17,8 @@ login_manager.init_app(app=app)
 
 # 这个callback函数用于reload User object，根据session中存储的user id
 @login_manager.user_loader
-def load_user(user_name):
-    return User.get(user_name)
+def load_user(user_id):
+    return User.get(user_id)
 
 # 主页，指向登录页、注册页、信息页、反馈页
 @app.route('/', methods=['GET', 'POST'])
