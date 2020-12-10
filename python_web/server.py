@@ -48,10 +48,23 @@ def signin():
 @app.route('/index', methods=['GET'])
 @login_required
 def index_page():
-    return '''
-    <h3 style="text-align: center;">Hello, {name}!</h3>
-    <button style="text-align: center;"><a href="/logout">登出</a></button>
-    '''.format(name=current_user.username)
+    # 应修改为自己电脑上.db文件的地址
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT username, name, sex, phone, description
+        FROM person_info
+        WHERE id = ?
+    ''', (current_user.id,))
+    value = cursor.fetchone()
+    user_dict = {
+        'username': value[0],
+        'name': value[1],
+        'sex': value[2],
+        'phone': value[3],
+        'description': value[4]
+    }
+    return render_template("index.html", user=user_dict)
 
 @app.route('/logout')
 @login_required
