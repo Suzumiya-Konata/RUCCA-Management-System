@@ -66,6 +66,11 @@ def index_page():
     }
     return render_template("index.html", user=user_dict)
 
+@app.route('/info_detail', methods=['GET'])
+@login_required
+def get_info_detail():
+    return "<h1>To be done by lr</h1>"
+
 @app.route('/logout')
 @login_required
 def logout():
