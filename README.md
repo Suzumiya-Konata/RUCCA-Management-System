@@ -1,2 +1,2 @@
 # RUCCA-Management-System
-A management system for RUCCA/A project for Database course
+A management system for RUCCA project for Database course
