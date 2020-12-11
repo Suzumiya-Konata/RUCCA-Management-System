@@ -11,6 +11,9 @@
     <div id="header" class="section">
         <p>{{ user.username }}的主页</p>
     </div>
+    <div class="section" style="text-align: center;">
+        <a href="/logout"><button class="submit">登出</button></a>
+    </div>
     <div class="section">
         <h1><span>基本信息</span></h1>
         <table>
@@ -33,9 +36,6 @@
                 <td class="selected">{{ user.description }}</td>
             </tr>
         </table>
-    </div>
-    <div class="section">
-        <button class="submit"><a href="/logout">登出</a></button>
     </div>
     <div class="copyright">
         &copy; 2020 RUCCA. All rights reserved.
