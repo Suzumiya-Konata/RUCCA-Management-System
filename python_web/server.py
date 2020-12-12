@@ -6,6 +6,7 @@ from flask_login import login_user, login_required
 from flask_login import LoginManager, current_user
 from flask_login import logout_user
 import os
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -36,7 +37,7 @@ def signin():
     name = request.form['username']
     passwd = request.form['password']
     remember_me = request.form.get('remember_me')
-    print(remember_me)
+    print(name)
 
     user = User(name)
     if user.verify_password(passwd):
@@ -83,44 +84,67 @@ def unauthorized_handler():
 
 @app.route('/signup', methods=['GET'])
 def signup_form():
-    return '''<form action="/signup" method="POST" name="signup">
-        <h3>请输入要注册的用户名和密码：</h3>
-        <p>新用户名<input name="new_username"></p>
-        <p>密码：<input name="new_password" type="password"></p>
-        <p><button type="submit">Sign Up</button></p>
-        </form>'''
+    return render_template('signup.html')
 
 @app.route('/signup', methods=['POST'])
 def signup():
     # 应修改为自己电脑上.db文件的地址
-    conn = sqlite3.connect("test.db")
+    conn = sqlite3.connect("../../RUCCA.db")
     cursor = conn.cursor()
-    name = request.form['new_username']
-    pwd = request.form['new_password']
-    cursor.execute('''
-        SELECT username
-        FROM user
-        WHERE username = '{name}'
-    '''.format(name=name))
 
-    values = cursor.fetchall()
-    if len(values) != 0:
+    # 查询允许注册的学号表，查看输入的学号是否在其中
+    studentid = request.form.get('stuid')
+    cursor.execute('SELECT has_signup FROM allowed_signup WHERE studentid = ?', (studentid,))
+    value = cursor.fetchall()
+
+    # 不在允许注册的学号表之中，不允许注册
+    if len(value) == 0 or value[0][0] == '1':
         return '''
-            <h3>注册失败：用户已存在!</h3>
+        <script>
+            alert("您没有注册权限，即将返回主页..");
+            window.location.href = "/";
+        </script>
         '''
     
+    # 查询person_info表，查看该用户名是否已经注册过
+    username = request.form.get('username')
     cursor.execute('''
-        INSERT INTO user
-        VALUES('{name}','{pwd}')
-    '''.format(name=name, pwd=pwd))
+        SELECT id
+        FROM person_info
+        WHERE username = ?
+    ''', (username,))
+    value = cursor.fetchall()
+    # 若注册过，返回到signup重新选择用户名
+    if len(value) > 0:
+        return '''
+        <script>
+            alert("该用户名已经注册过，请您更换用户名");
+            window.location.href = "/signup";
+        </script>
+        '''
+
+    # 若允许注册/用户名没注册过，则准许注册，将账号数据插入数据库中
+    password = request.form.get('password')
+    cursor.execute('''
+        INSERT INTO person_info(username, password_hash)
+        VALUES(?,?)
+    ''', (username, generate_password_hash(password)))
+    cursor.execute('''
+        UPDATE allowed_signup
+        SET has_signup = 1
+        WHERE studentid = ?
+    ''', (studentid,))
+
     conn.commit()
     conn.close()
 
-    result = '''
-    <h3>欢迎来到我们的社区，{name}！</h3>
-    <p>请保存好你的用户名和密码！</p>
-    '''.format(name=name)
-    return result
+    return '''
+    <script>
+        alert("注册成功！这是你的奖励（指返回登陆界面）");
+        window.location.href = "/signin";
+    </script>
+    '''
+    
 
 @app.route('/search', methods=['GET'])
 def search_form():

@@ -37,9 +37,32 @@ cursor.execute('''
     VALUES('Tadokoro', ?, 'Kouji', '11451419190810XXXX', 'M', '1926jzm0817', 'karate', 'senpai', 'enaaaaaaaaaa!')
 ''', (generate_password_hash('114514'),))
 
+cursor.execute('''
+    CREATE TABLE allowed_signup(
+        studentid INT PRIMARY KEY
+    )
+''')
+
+cursor.execute('''
+    INSERT INTO allowed_signup
+    VALUES(2018202059)
+''')
+
+cursor.execute('''
+    INSERT INTO allowed_signup
+    VALUES(2018202090)
+''')
+
+cursor.execute('''
+    INSERT INTO allowed_signup
+    VALUES(2018202133)
+''')
+
+cursor.execute("ALTER TABLE allowed_signup ADD has_signup CHAR")
+cursor.execute("UPDATE allowed_signup SET has_signup = '0'")
 """
 
-cursor.execute("SELECT username FROM person_info")
+cursor.execute("SELECT * FROM allowed_signup")
 value = cursor.fetchall()
 
 print(value)
