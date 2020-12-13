@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>事务中心</p>
+    </div>
+    <div class="section">
+        <form action="/issue_center" method="GET" id="search" style="text-align: center;">
+            <p>我创建的：<input type="checkbox" name="my_issue" value="true"><br/>我认证的：<input type="checkbox" name="my_cert" value="true"></p>
+            <p>事务id：<input type="text" name="issue_id"></p>
+            <p>负责人：<input type="text" name="host"></p>
+            <p>起始日期：<input type="date" name="date"></p>
+            <p>是否完成：<br/>是<input type="radio" name="is_finished" value="true"><br/>否<input type="radio" name="is_finished" value="false"></p>      
+            <p>认证人：<input type="text" name="cert"></p>
+            <button type="submit" class="submit">查询</button>    <button type="reset" class="submit">重置</button>
+        </form>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <th>事务id</th>
+                <th>发起人id</th>
+                <th>开始日期</th>
+                <th>描述</th>
+                <th>是否结束</th>
+                <th>认证人</th>
+            </tr>
+            {% for issue in issues %}
+                <tr>
+                    {% for i in issue %}
+                        <td>{{ i }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <td><a href={{ page_info.first_page_url }}>首页</a></td>
+                <td><a href={{ page_info.prev_page_url }}>上一页</a></td>
+                <td><a href={{ page_info.next_page_url }}>下一页</a></td>
+                <td><a href={{ page_info.end_page_url }}>末页</a></td>
+            </tr>
+        </table>
+        <p>第{{ page_info.cur_page_num }}页，共{{ page_info.max_page_num }}页。</p>
+        <p>前往<input type="text" name="page" form="search">页<button type="submit" class="submit" form="search">GO</button></p>
+    </div>
+</body>
+</html>

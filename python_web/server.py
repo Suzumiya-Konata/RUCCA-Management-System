@@ -7,6 +7,7 @@ from flask_login import LoginManager, current_user
 from flask_login import logout_user
 import os
 from werkzeug.security import generate_password_hash
+import re
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -37,7 +38,6 @@ def signin():
     name = request.form['username']
     passwd = request.form['password']
     remember_me = request.form.get('remember_me')
-    print(name)
 
     user = User(name)
     if user.verify_password(passwd):
@@ -144,55 +144,138 @@ def signup():
         window.location.href = "/signin";
     </script>
     '''
-    
 
-@app.route('/search', methods=['GET'])
-def search_form():
-    return '''<form action="/search" method="POST" name="search">
-        <h3>请输入要查找的姓名：</h3>
-        <p><input name="username"></p>
-        <p><button type="submit">Search</button></p>
-        </form>'''
+@app.route('/issue_center', methods=['GET'])
+@login_required
+def get_issue_from_center():
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/issue_center')
+    else:
+        return redirect('/issue_center?' + '&'.join(new_index_list))
 
-@app.route('/search', methods=['POST'])
-def search():
-    # 应修改为自己电脑上.db文件的地址
-    conn = sqlite3.connect("test.db")
+    args_dict = {}
+    args_trans = {
+        'issue_id': 'id',
+        'host': 'host_id',
+        'date': 'start_date',
+        'is_finished': 'is_finished',
+        'cert': 'cert_id'
+    }
+
+    conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
-    name = request.form['username']
+    for arg in args_trans.keys():
+        if request.args.get(arg) is not None:
+            if arg == 'is_finished':
+                if request.args.get(arg) == 'true':
+                    args_dict['is_finished'] = '1'
+                    continue
+                else:
+                    args_dict['is_finished'] = '0'
+                    continue
+            elif arg == 'issue_id':
+                if str(request.args.get(arg)).isdigit():
+                    args_dict[args_trans[arg]] = int(request.args.get(arg))
+                else:
+                    return redirect('/issue_center')
+                continue
+            elif arg == 'host' or arg == 'cert':
+                cursor.execute('''
+                    SELECT id
+                    FROM person_info
+                    WHERE username = ?
+                ''', (request.args.get(arg),))
+                value = cursor.fetchall()
+                if len(value) == 0:
+                    return redirect('/issue_center')
+                args_dict[args_trans[arg]] = value[0][0]
+                continue
+            args_dict[args_trans[arg]] = request.args.get(arg)
+    if request.args.get('my_issue') is not None:
+        args_dict['host_id'] = current_user.id
+    if request.args.get('my_cert') is not None:
+        args_dict['cert_id'] = current_user.id
 
-    string = '''
-        SELECT *
-        FROM info
-        WHERE username = '{name}'
-    '''.format(name=name)
-    cursor.execute(string)
+    sql_query = 'SELECT * FROM issue '
+    args_list = []
+    if len(args_dict) > 0:
+        sql_query += 'WHERE '
+        query_list = []
+        for key in args_dict.keys():
+            query_list.append(key + ' = ?')
+            args_list.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY id DESC'
 
-    values = cursor.fetchall()
+    if len(args_dict) > 0:
+        cursor.execute(sql_query, args_list)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
 
-    conn.commit()
-    conn.close()
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
 
-    if len(values) == 0:
-        return '''
-            <h3>用户{name}不存在!</h3>
-        '''.format(name=name)
-    
-    return '''
-        <h3>个人信息：</h3>
-        <table border="1">
-        <tr>
-            <td>用户名</td>
-            <td>年龄</td>
-            <td>所在部门</td>
-        </tr>
-        <tr>
-            <td>{0}</td>
-            <td>{1}</td>
-            <td>{2}</td>
-        </tr>
-        </table>
-    '''.format(values[0][0], values[0][1], values[0][2])
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                return redirect('/issue_center')
+        else:
+            return redirect('/issue_center')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    result = re.search(r'page=[0-9]+', current_url)
+    if result != None:
+        first_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(1), current_url)
+        end_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(all_page_num), current_url)
+        prev_page_url = current_url
+        if page_num > 1:
+            prev_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num-1), current_url)
+        next_page_url = current_url
+        if page_num < all_page_num:
+            next_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num+1), current_url)
+    else: # 现在已经在第一页中
+        if len(index_list) == 0:
+            first_page_url = current_url.replace('?','') + '?page=1'
+            end_page_url = current_url.replace('?','') + '?page={}'.format(all_page_num)
+            prev_page_url = first_page_url
+            next_page_url = current_url.replace('?','') + '?page=2'
+        else:
+            first_page_url = current_url + '&page=1'
+            end_page_url = current_url + '&page={}'.format(all_page_num)
+            prev_page_url = first_page_url
+            next_page_url = current_url + '&page=2'
+
+    page_info = {
+        'first_page_url': first_page_url,
+        'prev_page_url': prev_page_url,
+        'next_page_url': next_page_url,
+        'end_page_url': end_page_url,
+        'cur_page_num': page_num,
+        'max_page_num': all_page_num
+    }
+
+    return render_template('issue_center.html', issues=page_item, page_info=page_info)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
