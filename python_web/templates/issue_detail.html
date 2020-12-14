@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue_Detail:NO.{{ issue.id }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>事务详情：第{{ issue.id }}号</p>
+    </div>
+    <div class="section">
+        <a href="/issue_center"><button type="submit" class="submit">返回事务中心</button></a>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <th>名称</th>
+                <th>值</th>
+            </tr>
+            <tr>
+                <td>事务id</td>
+                <td>{{ issue.id }}</td>
+            </tr>
+            <tr>
+                <td>发起人</td>
+                <td>{{ issue.hostname }}</td>
+            </tr>
+            <tr>
+                <td>开始日期</td>
+                <td>{{ issue.date }}</td>
+            </tr>
+            <tr>
+                <td>事务描述</td>
+                <td>{{ issue.description }}</td>
+            </tr>
+            <tr>
+                <td>是否结束</td>
+                <td>{{ issue.is_finished }}</td>
+            </tr>
+            <tr>
+                <td>认证人</td>
+                <td>{{ issue.certname }}</td>
+            </tr>
+        </table>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

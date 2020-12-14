@@ -41,6 +41,11 @@ class User(UserMixin):
 
     def verify_password(self, password):
         password_hash = self.get_password_hash()
+        print(password_hash)
+        print(self.get_password_hash())
+        print(generate_password_hash(password))
+        print(password)
+        print(generate_password_hash("114514"))
         if password_hash is None:
             return False
         return check_password_hash(password_hash, password)
