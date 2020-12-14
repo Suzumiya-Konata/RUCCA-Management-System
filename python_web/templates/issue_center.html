@@ -26,17 +26,19 @@
         <table>
             <tr>
                 <th>事务id</th>
-                <th>发起人id</th>
+                <th>发起人</th>
                 <th>开始日期</th>
                 <th>描述</th>
                 <th>是否结束</th>
                 <th>认证人</th>
+                <th>链接</th>
             </tr>
             {% for issue in issues %}
                 <tr>
                     {% for i in issue %}
-                        <td>{{ i }}</td>
+                    <td>{{ i }}</td>
                     {% endfor %}
+                    <td><a href="/issue_center/{{ issue[0] }}">前往</a></td>
                 </tr>
             {% endfor %}
         </table>
@@ -52,6 +54,9 @@
         </table>
         <p>第{{ page_info.cur_page_num }}页，共{{ page_info.max_page_num }}页。</p>
         <p>前往<input type="text" name="page" form="search">页<button type="submit" class="submit" form="search">GO</button></p>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
     </div>
 </body>
 </html>

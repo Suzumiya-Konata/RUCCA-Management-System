@@ -61,9 +61,6 @@ cursor.execute('''
 cursor.execute("ALTER TABLE allowed_signup ADD has_signup CHAR")
 cursor.execute("UPDATE allowed_signup SET has_signup = '0'")
 
-
-cursor.execute("DROP TABLE issue")
-
 cursor.execute('''
     CREATE TABLE issue(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,6 +117,7 @@ for issue in issue_list:
     ))
     count += 1
 """
+# 注：cert_id为0代表未被认证
 
 cursor.execute("SELECT * FROM person_info")
 value = cursor.fetchall()

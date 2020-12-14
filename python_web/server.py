@@ -148,6 +148,7 @@ def signup():
 @app.route('/issue_center', methods=['GET'])
 @login_required
 def get_issue_from_center():
+    # 处理url，重定向至正确的最简url
     current_url = str(request.full_path)
     indexes = current_url.partition('?')[2]
     if indexes == '':
@@ -166,6 +167,7 @@ def get_issue_from_center():
     else:
         return redirect('/issue_center?' + '&'.join(new_index_list))
 
+    # 参数转换，将GET得到的参数转化为SQL查询的参数
     args_dict = {}
     args_trans = {
         'issue_id': 'id',
@@ -209,6 +211,7 @@ def get_issue_from_center():
     if request.args.get('my_cert') is not None:
         args_dict['cert_id'] = current_user.id
 
+    # 构建SQL查询语句
     sql_query = 'SELECT * FROM issue '
     args_list = []
     if len(args_dict) > 0:
@@ -220,6 +223,7 @@ def get_issue_from_center():
         sql_query += ' AND '.join(query_list)
     sql_query += ' ORDER BY id DESC'
 
+    # 查询部分
     if len(args_dict) > 0:
         cursor.execute(sql_query, args_list)
         value = cursor.fetchall()
@@ -227,6 +231,7 @@ def get_issue_from_center():
         cursor.execute(sql_query)
         value = cursor.fetchall()
 
+    # 页面显示设置&翻页参数设置
     all_page_num = 0
     if len(value) % 10 != 0:
         all_page_num = len(value) // 10 + 1
@@ -244,6 +249,43 @@ def get_issue_from_center():
             return redirect('/issue_center')
     page_item = value[(page_num - 1) * 10 : page_num * 10]
 
+    # 数据转换：将id转换为用户名，将1/0转换为是/否
+    for i in range(len(page_item)):
+        tmp = list(page_item[i])
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+        ''', (tmp[1],))
+        value = cursor.fetchone()
+        if value is None:
+            tmp[1] = 'None'
+        else:
+            tmp[1] = value[0]
+        if tmp[5] == 0:
+            tmp[5] = '未认证'
+        else:
+            cursor.execute('''
+                SELECT username
+                FROM person_info
+                WHERE id = ?
+            ''', (tmp[5],))
+            value = cursor.fetchone()
+            if value is None:
+                tmp[1] = 'None'
+            else:
+                tmp[1] = value[0]
+            tmp[5] = value
+        if tmp[4] == '0':
+            tmp[4] = '是'
+        else:
+            tmp[4] = '否'
+        page_item[i] = tmp
+    
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
     result = re.search(r'page=[0-9]+', current_url)
     if result != None:
         first_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(1), current_url)
@@ -276,6 +318,67 @@ def get_issue_from_center():
     }
 
     return render_template('issue_center.html', issues=page_item, page_info=page_info)
+
+@app.route('/issue_center/<int:issue_id>', methods=['GET'])
+@login_required
+def get_issue_detail(issue_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT MAX(id) FROM issue")
+    max_id = cursor.fetchone()[0]
+
+    # 判断url中的id是否在合法范围内，不合法则返回事务中心
+    if issue_id < 1 or issue_id > max_id:
+        return redirect('/issue_center')
+
+    cursor.execute("SELECT * FROM issue WHERE id = ?", (issue_id,))
+    value = cursor.fetchone()
+    if value is None:
+        return redirect('/issue_center')
+    
+    value_list = list(value)
+    cursor.execute('''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+    ''', (value_list[1],))
+    value = cursor.fetchone()
+    if value is None:
+        value_list[1] = 'None'
+    else:
+        value_list[1] = value[0]
+    if value_list[5] == 0:
+        value_list[5] = '未认证'
+    else:
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+       ''', (value_list[5],))
+        value = cursor.fetchone()
+        if value is None:
+            value_list[1] = 'None'
+        else:
+            value_list[1] = value[0]
+        value_list[5] = value
+    if value_list[4] == '0':
+        value_list[4] = '是'
+    else:
+        value_list[4] = '否'
+
+    conn.commit()
+    conn.close()
+
+    issue_dict = {
+        'id': value_list[0],
+        'hostname': value_list[1],
+        'date': value_list[2],
+        'description': value_list[3],
+        'is_finished': value_list[4],
+        'certname': value_list[5]
+    }
+    return render_template('issue_detail.html', issue=issue_dict)
 
 if __name__ == '__main__':
     app.run(debug=True)
