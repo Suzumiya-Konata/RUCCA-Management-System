@@ -6,6 +6,8 @@ from flask_login import login_user, login_required
 from flask_login import LoginManager, current_user
 from flask_login import logout_user
 import os
+from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -64,12 +66,155 @@ def index_page():
         'phone': value[3],
         'description': value[4]
     }
+    conn.commit()
+    conn.close()
     return render_template("index.html", user=user_dict)
 
 @app.route('/info_detail', methods=['GET'])
 @login_required
 def get_info_detail():
-    return "<h1>To be done by lr</h1>"
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT *
+        FROM person_info
+        WHERE id = ?
+    ''', (current_user.id,))
+    value = cursor.fetchone()
+    user_dict = {
+        'username': value[1],
+        'password_hash': value[2],
+        'name': value[3],
+        'id_card_number': value[4],
+        'sex': value[5],
+        'phone': value[6],
+        'department': value[7],
+        'job': value[8],
+        'description': value[9]
+    }
+    conn.commit()
+    conn.close()
+    return render_template("info_detail.html", user=user_dict)
+
+@app.route('/info_modify', methods=['GET'])
+@login_required
+def modify_info_detail():
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT *
+        FROM person_info
+        WHERE id = ?
+    ''', (current_user.id,))
+    value = cursor.fetchone()
+    user_dict = {
+        'username': value[1],
+        'password_hash': value[2],
+        'name': value[3],
+        'id_card_number': value[4],
+        'sex': value[5],
+        'phone': value[6],
+        'department': value[7],
+        'job': value[8],
+        'description': value[9]
+    }
+    conn.commit()
+    conn.close()
+    return render_template("info_modify.html", user=user_dict)
+
+@app.route('/info_modify', methods=['POST'])
+@login_required
+def modifying_info_detail():
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        SELECT *
+        FROM person_info
+        WHERE id = ?
+        ''',(current_user.id,)
+    )
+    value = cursor.fetchone()
+    user_dict = {
+        'username': value[1],
+        'password_hash': value[2],
+        'name': value[3],
+        'id_card_number': value[4],
+        'sex': value[5],
+        'phone': value[6],
+        'department': value[7],
+        'job': value[8],
+        'description': value[9]
+    }
+    #验证密码
+    passwd = request.form['before_passwd']
+    user = User(user_dict['username'])
+    if(user.verify_password(passwd)):
+        pass
+    else:
+        #验证失败页面
+        conn.commit()
+        conn.close()
+        return '<h3>Bad username or password.</h3>'
+    #查看是否修改用户名和密码
+    flag1 = flag2 = 0
+    if(request.form['username']!=user_dict['username']):
+        flag1 = 1
+    if(request.form['password']!=""):
+        flag2 = 1
+    #数据库内容修改
+    if(flag2):
+        if(flag1):
+            cursor.execute(
+                '''
+                UPDATE person_info
+                SET
+                    username = ? ,
+                    password_hash = ? ,
+                    phone = ? ,
+                    description = ?
+                ''',(request.form['username'],generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],)
+            )
+        else:
+            cursor.execute(
+                '''
+                UPDATE person_info
+                SET
+                    password_hash = ? ,
+                    phone = ? ,
+                    description = ?
+                ''',(generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],)
+            )
+    else:
+        if(flag1):
+            cursor.execute(
+                '''
+                UPDATE person_info
+                SET
+                    username = ? ,
+                    phone = ? ,
+                    description = ?
+                ''',(request.form['username'],request.form['phone'],request.form['description'],)
+            )
+        else:
+            cursor.execute(
+            '''
+            UPDATE person_info
+            SET
+                phone = ? ,
+                description = ?
+            ''',(request.form['phone'],request.form['description'],)
+        )
+    conn.commit()
+    conn.close()
+
+    #修改成功页面
+    if(flag1 or flag2):
+        logout_user()
+        return redirect('/signin')
+    else:
+        return redirect('/info_detail')
+    return '''<h1>to do by lr</h1>'''
 
 @app.route('/logout')
 @login_required

@@ -6,7 +6,7 @@ import uuid
 conn = sqlite3.connect("../../RUCCA.db")
 cursor = conn.cursor()
 
-"""
+
 cursor.execute('''
     CREATE TABLE person_info(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +37,7 @@ cursor.execute('''
     VALUES('Tadokoro', ?, 'Kouji', '11451419190810XXXX', 'M', '1926jzm0817', 'karate', 'senpai', 'enaaaaaaaaaa!')
 ''', (generate_password_hash('114514'),))
 
-"""
+
 
 cursor.execute("SELECT username FROM person_info")
 value = cursor.fetchall()

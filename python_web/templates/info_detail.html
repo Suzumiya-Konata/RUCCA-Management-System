@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Handlee" rel="stylesheet">
+    <h1>to do by lr</h1>
+</head>
+<body>
+    <div id="header" class="section">
+        <p>{{ user.username }}的个人信息</p>
+    </div>
+    <div class="section">
+        <h1><span>基本信息</span></h1>
+        <table>
+            <tr>
+                <th>姓名</th>
+                <th>性别</th>
+                <th>身份证号</th>
+            </tr>
+            <tr>
+                <td class="selected">{{ user.name }}</td>
+                {% if user.sex == 'M' %}
+                    <td class="selected">男</td>
+                {% else %}
+                    <td class="selected">女</td>
+                {% endif %}
+                <td class="selected">{{ user.id_card_number }}</td>
+            </tr>
+            <p></p>
+            <p></p>
+        </table>
+    </div>
+    <div class="section">
+        <h1><span>职务信息</span></h1>
+        <table>
+            <tr>
+                <th>所属部门</th>
+                <th>职务</th>
+            </tr>
+            <tr>
+                <td class="selected">{{ user.department }}</td>
+                <td class="selected">{{ user.job }}</td>
+            </tr>
+            <p></p>
+            <p></p>
+        </table>
+    </div>
+    <div class="section">
+        <h1><span>账号信息</span></h1>
+        <table>
+            <tr>
+                <th>用户名</th>
+                <th>密码</th>
+            </tr>
+            <tr>
+                <td class="selected">{{ user.username }}</td>
+                <td class="selected">********</td>
+            </tr>
+            <p></p>
+            <p></p>
+        </table>
+    </div>
+    <div class="section">
+        <h1><span>其他信息</span></h1>
+        <table>
+            <tr>
+                <th>联系方式</th>
+                <th>个人描述</th>
+            </tr>
+            <tr>
+                <td class="selected">{{ user.phone }}</td>
+                <td class="selected">{{ user.description }}</td>
+            </tr>
+            <p></p>
+            <p></p>
+        </table>
+    </div>
+    <div class="section" style="text-align: center;">
+        <a href="/info_modify"><button class="submit">修改</button></a>
+        <a href="/index"><button class="submit">返回</button></a>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>
