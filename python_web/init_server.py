@@ -6,7 +6,7 @@ import uuid
 conn = sqlite3.connect("../../RUCCA.db")
 cursor = conn.cursor()
 
-"""
+
 cursor.execute('''
     CREATE TABLE person_info(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -116,6 +116,8 @@ for issue in issue_list:
     cert
     ))
     count += 1
+conn.commit()
+conn.close()
 """
 # 注：cert_id为0代表未被认证
 
@@ -124,6 +126,4 @@ value = cursor.fetchall()
 
 for i in value:
     print(i)
-
-conn.commit()
-conn.close()
+"""

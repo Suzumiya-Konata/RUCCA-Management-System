@@ -85,7 +85,7 @@ class User(UserMixin):
             conn.close()
             if value is not None:
                 return str(value[0])
-        return None
+        return "0"
 
     @staticmethod
     def get(user_id):

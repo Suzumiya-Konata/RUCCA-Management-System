@@ -1,6 +1,6 @@
-import re
-current_url = "&/issue_center"
-end_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(24), current_url)
-print(end_page_url)
-
-print(current_url.split('&'))
+import sqlite3
+conn = sqlite3.connect('../../RUCCA.db')
+cursor = conn.cursor()
+cursor.execute("SELECT * FROM person_info")
+v = cursor.fetchall()
+print(v)
