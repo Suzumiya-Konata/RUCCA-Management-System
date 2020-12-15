@@ -6,7 +6,6 @@
     <title>Index</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Handlee" rel="stylesheet">
-    <h1>to do by lr</h1>
 </head>
 <body>
     <div id="header" class="section">
@@ -55,11 +54,11 @@
             <table>
                 <tr>
                     <th>用户名</th>
-                    <th>密码</th>
+                    <th>密码（仅在为空时不作修改）</th>
                 </tr>
                 <tr>
                     <td><input type="text" name="username" value="{{ user.username }}"></td>
-                    <td><input type="password" name="password" value="">（为空时不作修改）</td>
+                    <td><input type="password" name="password" value=""></td>
                 </tr>
                 <p></p>
                 <p></p>
