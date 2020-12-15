@@ -12,6 +12,14 @@
         <p>事务中心</p>
     </div>
     <div class="section">
+        <table>
+            <a href="/issue_center/create"><button class="submit" style="float: right;">创建新事务</button></a>
+            <a href="/index"><button class="submit" style="float: left;">返回主界面</button></a>
+            <p></p>
+            <p></p>
+        </table>
+    </div>
+    <div class="section">
         <form action="/issue_center" method="GET" id="search" style="text-align: center;">
             <p>我创建的：<input type="checkbox" name="my_issue" value="true"><br/>我认证的：<input type="checkbox" name="my_cert" value="true"></p>
             <p>事务id：<input type="text" name="issue_id"></p>
@@ -25,7 +33,6 @@
     <div class="section" style="text-align: center;">
         <button type="submit" class="submit" form="search">查询</button>
         <button type="reset" class="submit" form="search">重置</button>
-        <a href="/index"><button class="submit">返回</button></a>
     </div>
     <div class="section">
         <table>

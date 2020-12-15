@@ -6,11 +6,17 @@
     <title>Issue</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Handlee" rel="stylesheet">
-    <h1>to do by lr</h1>
 </head>
 <body>
     <div id="header" class="section">
         <p>事务编辑：第{{ issue.id }}号</p>
+    </div>
+    <div class="section">
+        <table>
+            <div class="section" style="float: left;">
+                <a href="/issue_center/{{ issue.id }}"><button type="submit" class="submit">返回事务详情</button></a>
+            </div>
+        </table>
     </div>
     <form action="/issue_center/modify/{{ issue.id }}" method="POST" id="issue_modify">
         <div class="section">
@@ -29,7 +35,7 @@
                 </tr>
                 <tr>
                     <td>开始日期</td>
-                    <td><input type="text" name="date" value="{{ issue.date }}"></td>
+                    <td>{{ issue.date }}</td>
                 </tr>
                 <tr>
                     <td>事务描述</td>

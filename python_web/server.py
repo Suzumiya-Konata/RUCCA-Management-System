@@ -586,5 +586,12 @@ def modify_issue_detail(issue_id):
     #确认可修改范围
     return render_template('issue_modify_host.html', issue=issue_dict)
     
+    
+@app.route('/issue_center/create', methods=['GET'])
+@login_required
+def create_issue():
+    #创建事务
+    #输入描述
+    return """<h1>todo by lr</h1>"""
 if __name__ == '__main__':
     app.run(debug=True)
