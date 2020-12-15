@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Handlee" rel="stylesheet">
+    <h1>to do by lr</h1>
+</head>
+<body>
+    <div id="header" class="section">
+        <p>事务编辑：第{{ issue.id }}号</p>
+    </div>
+    <form action="/issue_center/modify/{{ issue.id }}" method="POST" id="issue_modify">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>名称</th>
+                    <th>值</th>
+                </tr>
+                <tr>
+                    <td>事务id</td>
+                    <td>{{ issue.id }}</td>
+                </tr>
+                <tr>
+                    <td>发起人</td>
+                    <td>{{ issue.hostname }}</td>
+                </tr>
+                <tr>
+                    <td>开始日期</td>
+                    <td><input type="text" name="date" value="{{ issue.date }}"></td>
+                </tr>
+                <tr>
+                    <td>事务描述</td>
+                    <td><input type="text" name="description" value="{{ issue.description }}"></td>
+                </tr>
+                <tr>
+                    <td>是否结束</td>
+                    <td><input type="text" name="is_finished" value="{{ issue.is_finished }}"></td>
+                </tr>
+                <tr>
+                    <td>认证人</td>
+                    <td><input type="text" name="certname" value="{{ issue.certname }}"></td>
+                </tr>
+            </table>
+        </div>
+    </form>
+    <div class="section" style="text-align: center;">
+        <button type="submit" class="submit" form="issue_modify" >确认</button>
+        <a href="/issue_center/modify/{{ issue.id }}"><button class="submit">重置</button></a>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

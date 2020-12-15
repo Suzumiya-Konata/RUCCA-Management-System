@@ -498,5 +498,69 @@ def get_issue_detail(issue_id):
     }
     return render_template('issue_detail.html', issue=issue_dict)
 
+@app.route('/issue_center/modify/<int:issue_id>', methods=['GET'])
+@login_required
+def modify_issue_detail(issue_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT MAX(id) FROM issue")
+    max_id = cursor.fetchone()[0]
+
+    # 判断url中的id是否在合法范围内，不合法则返回事务中心
+    if issue_id < 1 or issue_id > max_id:
+        return redirect('/issue_center')
+
+    cursor.execute("SELECT * FROM issue WHERE id = ?", (issue_id,))
+    value = cursor.fetchone()
+    if value is None:
+        return redirect('/issue_center')
+    
+    value_list = list(value)
+    cursor.execute('''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+    ''', (value_list[1],))
+    value = cursor.fetchone()
+    if value is None:
+        value_list[1] = 'None'
+    else:
+        value_list[1] = value[0]
+    if value_list[5] == 0:
+        value_list[5] = '未认证'
+    else:
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+       ''', (value_list[5],))
+        value = cursor.fetchone()
+        if value is None:
+            value_list[5] = 'None'
+        else:
+            value_list[5] = value[0]
+    if value_list[4] == '0':
+        value_list[4] = '是'
+    else:
+        value_list[4] = '否'
+
+    conn.commit()
+    conn.close()
+
+    issue_dict = {
+        'id': value_list[0],
+        'hostname': value_list[1],
+        'date': value_list[2],
+        'description': value_list[3],
+        'is_finished': value_list[4],
+        'certname': value_list[5]
+    }
+    #todo
+    #添加身份验证
+    
+    #确认可修改范围
+    return render_template('issue_modify_host.html', issue=issue_dict)
+    
 if __name__ == '__main__':
     app.run(debug=True)
