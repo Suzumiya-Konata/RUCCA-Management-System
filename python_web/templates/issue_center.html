@@ -24,7 +24,7 @@
             <p>我创建的：<input type="checkbox" name="my_issue" value="true"><br/>我认证的：<input type="checkbox" name="my_cert" value="true"></p>
             <p>事务id：<input type="text" name="issue_id"></p>
             <p>负责人：<input type="text" name="host"></p>
-            <p>起始日期：<input type="date" name="date"></p>
+            <p>起始日期：<input type="date" name="date" value="年/月/日"></p>
             <p>是否完成：<br/>是<input type="radio" name="is_finished" value="true"><br/>否<input type="radio" name="is_finished" value="false"></p>      
             <p>认证人：<input type="text" name="cert"></p>
             
@@ -42,7 +42,6 @@
                 <th>开始日期</th>
                 <th>描述</th>
                 <th>是否结束</th>
-                <th>认证人</th>
                 <th>链接</th>
             </tr>
             {% for issue in issues %}
@@ -71,4 +70,3 @@
         &copy; 2020 RUCCA. All rights reserved.
     </div>
 </body>
-</html>
