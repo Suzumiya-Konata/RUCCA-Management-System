@@ -11,8 +11,11 @@
     <div id="header" class="section">
         <p>事务详情：第{{ issue.id }}号</p>
     </div>
-    <div class="section">
+    <div class="section" style="float: left;">
         <a href="/issue_center"><button type="submit" class="submit">返回事务中心</button></a>
+    </div>
+    <div class="section" style="float: right;">
+        <a href="/issue_center/modify/{{ issue.id }}"><button type="submit" class="submit">返回事务中心</button></a>
     </div>
     <div class="section">
         <table>

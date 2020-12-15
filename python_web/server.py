@@ -522,5 +522,9 @@ def get_issue_detail(issue_id):
     }
     return render_template('issue_detail.html', issue=issue_dict)
 
+@app.route('/issue_center/modify/<int:issue_id>', methods=['GET'])
+@login_required
+def modify_issue_detail(issue_id):
+    return '''<h1>to do by lr</h1>'''
 if __name__ == '__main__':
     app.run(debug=True)
