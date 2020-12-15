@@ -317,8 +317,7 @@ def get_issue_from_center():
         'issue_id': 'id',
         'host': 'host_id',
         'date': 'start_date',
-        'is_finished': 'is_finished',
-        'cert': 'cert_id'
+        'is_finished': 'is_finished'
     }
 
     conn = sqlite3.connect('../../RUCCA.db')
@@ -338,7 +337,7 @@ def get_issue_from_center():
                 else:
                     return redirect('/issue_center')
                 continue
-            elif arg == 'host' or arg == 'cert':
+            elif arg == 'host':
                 cursor.execute('''
                     SELECT id
                     FROM person_info
@@ -352,8 +351,6 @@ def get_issue_from_center():
             args_dict[args_trans[arg]] = request.args.get(arg)
     if request.args.get('my_issue') is not None:
         args_dict['host_id'] = current_user.id
-    if request.args.get('my_cert') is not None:
-        args_dict['cert_id'] = current_user.id
 
     # 构建SQL查询语句
     sql_query = 'SELECT * FROM issue '
@@ -406,19 +403,6 @@ def get_issue_from_center():
             tmp[1] = 'None'
         else:
             tmp[1] = value[0]
-        if tmp[5] == 0:
-            tmp[5] = '未认证'
-        else:
-            cursor.execute('''
-                SELECT username
-                FROM person_info
-                WHERE id = ?
-            ''', (tmp[5],))
-            value = cursor.fetchone()
-            if value is None:
-                tmp[5] = 'None'
-            else:
-                tmp[5] = value[0]
         if tmp[4] == '0':
             tmp[4] = '是'
         else:
@@ -441,15 +425,21 @@ def get_issue_from_center():
             next_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num+1), current_url)
     else: # 现在已经在第一页中
         if len(index_list) == 0:
-            first_page_url = current_url.replace('?','') + '?page=1'
-            end_page_url = current_url.replace('?','') + '?page={}'.format(all_page_num)
+            first_page_url = current_url + 'page=1'
+            end_page_url = current_url + 'page={}'.format(all_page_num)
             prev_page_url = first_page_url
-            next_page_url = current_url.replace('?','') + '?page=2'
+            if all_page_num == 1:
+                next_page_url = first_page_url
+            else:
+                next_page_url = current_url + 'page=2'
         else:
             first_page_url = current_url + '&page=1'
             end_page_url = current_url + '&page={}'.format(all_page_num)
             prev_page_url = first_page_url
-            next_page_url = current_url + '&page=2'
+            if all_page_num == 1:
+                next_page_url = first_page_url
+            else:
+                next_page_url = current_url + '&page=2'
 
     page_info = {
         'first_page_url': first_page_url,
@@ -491,19 +481,6 @@ def get_issue_detail(issue_id):
         value_list[1] = 'None'
     else:
         value_list[1] = value[0]
-    if value_list[5] == 0:
-        value_list[5] = '未认证'
-    else:
-        cursor.execute('''
-            SELECT username
-            FROM person_info
-            WHERE id = ?
-       ''', (value_list[5],))
-        value = cursor.fetchone()
-        if value is None:
-            value_list[5] = 'None'
-        else:
-            value_list[5] = value[0]
     if value_list[4] == '0':
         value_list[4] = '是'
     else:
@@ -517,8 +494,7 @@ def get_issue_detail(issue_id):
         'hostname': value_list[1],
         'date': value_list[2],
         'description': value_list[3],
-        'is_finished': value_list[4],
-        'certname': value_list[5]
+        'is_finished': value_list[4]
     }
     return render_template('issue_detail.html', issue=issue_dict)
 

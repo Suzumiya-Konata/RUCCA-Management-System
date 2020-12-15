@@ -6,60 +6,8 @@ import uuid
 conn = sqlite3.connect("../../RUCCA.db")
 cursor = conn.cursor()
 
-
-cursor.execute('''
-    CREATE TABLE person_info(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username VARCHAR(20) UNIQUE,
-        password_hash CHAR(94),
-        name VARCHAR(10),
-        id_card_number CHAR(18),
-        sex CHAR(1),
-        phone VARCHAR(11),
-        department VARCHAR(10),
-        job VARCHAR(10),
-        description VARCHAR(100)
-    )
-''')
-
-cursor.execute('''
-    INSERT INTO person_info(
-        username,
-        password_hash,
-        name,
-        id_card_number,
-        sex,
-        phone,
-        department,
-        job,
-        description
-    )
-    VALUES('Tadokoro', ?, 'Kouji', '11451419190810XXXX', 'M', '1926jzm0817', 'karate', 'senpai', 'enaaaaaaaaaa!')
-''', (generate_password_hash('114514'),))
-
-cursor.execute('''
-    CREATE TABLE allowed_signup(
-        studentid INT PRIMARY KEY
-    )
-''')
-
-cursor.execute('''
-    INSERT INTO allowed_signup
-    VALUES(2018202059)
-''')
-
-cursor.execute('''
-    INSERT INTO allowed_signup
-    VALUES(2018202090)
-''')
-
-cursor.execute('''
-    INSERT INTO allowed_signup
-    VALUES(2018202133)
-''')
-
-cursor.execute("ALTER TABLE allowed_signup ADD has_signup CHAR")
-cursor.execute("UPDATE allowed_signup SET has_signup = '0'")
+# 注：sqlite不支持ALTER TABLE DROP COLUMN的形式
+cursor.execute("DROP TABLE issue")
 
 cursor.execute('''
     CREATE TABLE issue(
@@ -68,10 +16,7 @@ cursor.execute('''
         start_date DATE,
         description VARCHAR(100),
         is_finished CHAR,
-        cert_id INT,
         FOREIGN KEY (host_id)
-            REFERENCES person_info(id),
-        FOREIGN KEY (cert_id)
             REFERENCES person_info(id)
     )
 ''')
@@ -96,34 +41,26 @@ issue_list = [
 count = 0
 for issue in issue_list:
     host = 0
-    cert = 0
     if count % 2 == 0:
         host = 1
     else:
         host = 2
-        if count % 4 == 1:
-            cert = 1
-        else:
-            cert = 2
     cursor.execute('''
-        INSERT INTO issue(host_id, start_date, description, is_finished, cert_id)
-        VALUES(?, ?, ?, ?, ?)
+        INSERT INTO issue(host_id, start_date, description, is_finished)
+        VALUES(?, ?, ?, ?)
     ''', 
     (host, 
     '2020-12-{}'.format(str(7+count).zfill(2)), 
     issue,
-    str(count % 2),
-    cert
+    str(count % 2)
     ))
     count += 1
-conn.commit()
-conn.close()
-"""
-# 注：cert_id为0代表未被认证
 
-cursor.execute("SELECT * FROM person_info")
+cursor.execute("SELECT * FROM issue")
 value = cursor.fetchall()
 
 for i in value:
     print(i)
-"""
+
+conn.commit()
+conn.close()
