@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>新建事务</p>
+    </div>
+    <form action="/issue_center/create" method="POST" id="new_issue">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>创建人</th>
+                    <th>创建日期</th>
+                </tr>
+                <tr>
+                    <td class="selected">{{ issue.host }}</td>
+                    <td class="selected">{{ issue.date }}</td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>事务描述</th>
+                </tr>
+                <tr>
+                    <th><input maxlength="100" type="text" name="description" style="height: 80px;"></th>
+                </tr>
+           </table>
+        </div> 
+    </form>
+    <div class="section">
+        <a href="/issue_center"><button class="submit" style="float: right;">放弃事务创建</button></a>
+        <button type="submit" class="submit" form="new_issue" style="text-align: center;">创建事务</button>
+    </div>
+</body>

@@ -21,12 +21,11 @@
     </div>
     <div class="section">
         <form action="/issue_center" method="GET" id="search" style="text-align: center;">
-            <p>我创建的：<input type="checkbox" name="my_issue" value="true"><br/>我认证的：<input type="checkbox" name="my_cert" value="true"></p>
+            <p>我创建的：<input type="checkbox" name="my_issue" value="true"></p>
             <p>事务id：<input type="text" name="issue_id"></p>
-            <p>负责人：<input type="text" name="host"></p>
-            <p>起始日期：<input type="date" name="date" value="年/月/日"></p>
-            <p>是否完成：<br/>是<input type="radio" name="is_finished" value="true"><br/>否<input type="radio" name="is_finished" value="false"></p>      
-            <p>认证人：<input type="text" name="cert"></p>
+            <p>创建人：<input type="text" name="host"></p>
+            <p>创建日期：<input type="date" name="date" value="年/月/日"></p>
+            <p>是否结束：<br/>是<input type="radio" name="is_finished" value="true"><br/>否<input type="radio" name="is_finished" value="false"></p>
             
         </form>
     </div>
@@ -38,8 +37,8 @@
         <table>
             <tr>
                 <th>事务id</th>
-                <th>发起人</th>
-                <th>开始日期</th>
+                <th>创建人</th>
+                <th>创建日期</th>
                 <th>描述</th>
                 <th>是否结束</th>
                 <th>链接</th>

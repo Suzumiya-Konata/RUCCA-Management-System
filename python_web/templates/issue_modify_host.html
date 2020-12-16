@@ -30,7 +30,7 @@
                     <td>{{ issue.id }}</td>
                 </tr>
                 <tr>
-                    <td>发起人</td>
+                    <td>创建人</td>
                     <td>{{ issue.hostname }}</td>
                 </tr>
                 <tr>
@@ -43,11 +43,7 @@
                 </tr>
                 <tr>
                     <td>是否结束</td>
-                    <td><input type="text" name="is_finished" value="{{ issue.is_finished }}"></td>
-                </tr>
-                <tr>
-                    <td>认证人</td>
-                    <td><input type="text" name="certname" value="{{ issue.certname }}"></td>
+                    <td><br/>是<input type="radio" name="is_finished" value="true"><br/>否<input type="radio" name="is_finished" value="false"></td>
                 </tr>
             </table>
         </div>
