@@ -173,7 +173,8 @@ def modifying_info_detail():
                     password_hash = ? ,
                     phone = ? ,
                     description = ?
-                ''',(request.form['username'],generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],)
+                WHERE id = ?
+                ''',(request.form['username'],generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],current_user.id,)
             )
         else:
             cursor.execute(
@@ -183,7 +184,8 @@ def modifying_info_detail():
                     password_hash = ? ,
                     phone = ? ,
                     description = ?
-                ''',(generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],)
+                WHERE id = ?
+                ''',(generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],current_user.id,)
             )
     else:
         if(flag1):
@@ -194,7 +196,8 @@ def modifying_info_detail():
                     username = ? ,
                     phone = ? ,
                     description = ?
-                ''',(request.form['username'],request.form['phone'],request.form['description'],)
+                WHERE id = ?
+                ''',(request.form['username'],request.form['phone'],request.form['description'],current_user.id,)
             )
         else:
             cursor.execute(
@@ -203,7 +206,8 @@ def modifying_info_detail():
             SET
                 phone = ? ,
                 description = ?
-            ''',(request.form['phone'],request.form['description'],)
+            WHERE id = ?
+            ''',(request.form['phone'],request.form['description'],current_user.id,)
         )
     conn.commit()
     conn.close()
@@ -404,9 +408,9 @@ def get_issue_from_center():
         else:
             tmp[1] = value[0]
         if tmp[4] == '0':
-            tmp[4] = '是'
-        else:
             tmp[4] = '否'
+        else:
+            tmp[4] = '是'
         page_item[i] = tmp
     
     conn.commit()
@@ -481,7 +485,7 @@ def get_issue_detail(issue_id):
         value_list[1] = 'None'
     else:
         value_list[1] = value[0]
-    if value_list[4] == '0':
+    if value_list[4] == '1':
         value_list[4] = '是'
     else:
         value_list[4] = '否'
@@ -516,6 +520,16 @@ def modify_issue_detail(issue_id):
     if value is None:
         return redirect('/issue_center')
     
+    #todo
+    #添加身份验证
+    cursor.execute("SELECT host_id FROM issue WHERE id = ?",(issue_id,))
+    #如果身份为host允许修改
+    values = cursor.fetchone()
+    if(values[0]!=current_user.id):
+        return redirect('/issue_center')
+    #如果身份不为host(可能需要添加对管理员允许),强制返回事务中心
+
+
     value_list = list(value)
     cursor.execute('''
         SELECT username
@@ -527,19 +541,6 @@ def modify_issue_detail(issue_id):
         value_list[1] = 'None'
     else:
         value_list[1] = value[0]
-    if value_list[5] == 0:
-        value_list[5] = '未认证'
-    else:
-        cursor.execute('''
-            SELECT username
-            FROM person_info
-            WHERE id = ?
-       ''', (value_list[5],))
-        value = cursor.fetchone()
-        if value is None:
-            value_list[5] = 'None'
-        else:
-            value_list[5] = value[0]
     if value_list[4] == '0':
         value_list[4] = '是'
     else:
@@ -553,14 +554,105 @@ def modify_issue_detail(issue_id):
         'hostname': value_list[1],
         'date': value_list[2],
         'description': value_list[3],
-        'is_finished': value_list[4],
-        'certname': value_list[5]
+        'is_finished': value_list[4]
     }
-    #todo
-    #添加身份验证
-    
-    #确认可修改范围
     return render_template('issue_modify_host.html', issue=issue_dict)
     
+@app.route('/issue_center/modify/<int:issue_id>', methods=['POST'])
+@login_required
+def modify_detail(issue_id):
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    if(request.form['is_finished']=='true'):
+        is_finished = 1
+    else:
+        is_finished = 0
+    print(is_finished,request.form['is_finished'])
+    cursor.execute(
+        '''
+        UPDATE issue
+        SET
+            description = ? ,
+            is_finished = ?
+        WHERE id = ?
+        ''',(request.form['description'],is_finished,issue_id,)
+    )
+    conn.commit()
+    conn.close()
+    return redirect('/issue_center/'+str(issue_id))
+
+@app.route('/issue_center/create', methods=['GET'])
+@login_required
+def descrip_issue():
+    #创建事务
+    #生成除了描述外的其他值
+    
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+        ''',(current_user.id,)
+    )
+    value = cursor.fetchone()
+    conn.commit()
+    conn.close()
+
+    import time
+    localtime = time.localtime(time.time())
+    date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
+    issue_dict = {
+        'host':value[0],
+        'date':date
+    }
+    return render_template('issue_create.html', issue=issue_dict)
+
+@app.route('/issue_center/create', methods=['POST'])
+@login_required
+def create_issue():
+    #基本架构完成
+    #可能需要身份核准
+    #没有对description进行防xss验证
+    description = request.form['description']
+    import time
+    localtime = time.localtime(time.time())
+    date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+        ''',(current_user.id,)
+    )
+    values = cursor.fetchone()
+    issue_dict = {
+        'host':values[0],
+        'date':date,
+        'description':description,
+        'is_finished':0
+    }
+    cursor.execute(
+        '''
+        INSERT INTO issue(host_id,start_date,description,is_finished)
+        VALUES(?,?,?,?)
+        ''',
+        (current_user.id,
+        issue_dict['date'],
+        issue_dict['description'],
+        issue_dict['is_finished'])
+    )
+    cursor.execute('''
+        SELECT count(id)
+        FROM issue
+    ''')
+    values = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    return redirect('/issue_center/'+str(values[0]))
+
 if __name__ == '__main__':
     app.run(debug=True)

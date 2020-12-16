@@ -12,25 +12,33 @@
         <p>事务中心</p>
     </div>
     <div class="section">
+        <table>
+            <a href="/issue_center/create"><button class="submit" style="float: right;">创建新事务</button></a>
+            <a href="/index"><button class="submit" style="float: left;">返回主界面</button></a>
+            <p></p>
+            <p></p>
+        </table>
+    </div>
+    <div class="section">
         <form action="/issue_center" method="GET" id="search" style="text-align: center;">
             <p>我创建的：<input type="checkbox" name="my_issue" value="true"></p>
             <p>事务id：<input type="text" name="issue_id"></p>
-            <p>负责人：<input type="text" name="host"></p>
-            <p>起始日期：<input type="date" name="date"></p>
-            <p>是否完成：<br/>是<input type="radio" name="is_finished" value="true"><br/>否<input type="radio" name="is_finished" value="false"></p>
+            <p>创建人：<input type="text" name="host"></p>
+            <p>创建日期：<input type="date" name="date" value="年/月/日"></p>
+            <p>是否结束：<br/>是<input type="radio" name="is_finished" value="true"><br/>否<input type="radio" name="is_finished" value="false"></p>
+            
         </form>
     </div>
     <div class="section" style="text-align: center;">
         <button type="submit" class="submit" form="search">查询</button>
         <button type="reset" class="submit" form="search">重置</button>
-        <a href="/index"><button class="submit">返回</button></a>
     </div>
     <div class="section">
         <table>
             <tr>
                 <th>事务id</th>
-                <th>发起人</th>
-                <th>开始日期</th>
+                <th>创建人</th>
+                <th>创建日期</th>
                 <th>描述</th>
                 <th>是否结束</th>
                 <th>链接</th>
@@ -61,4 +69,3 @@
         &copy; 2020 RUCCA. All rights reserved.
     </div>
 </body>
-</html>
