@@ -14,9 +14,16 @@
     <div class="section" style="float: left;">
         <a href="/issue_center"><button type="submit" class="submit">返回事务中心</button></a>
     </div>
-    <div class="section" style="float: right;">
-        <a href="/issue_center/modify/{{ issue.id }}"><button type="submit" class="submit">修改事务</button></a>
-    </div>
+    {% if is_display == 1 %}
+        <div class="section" style="float: right;">
+            <form action="/issue_center/{{ issue.id }}" method="POST">
+                <button type="submit" class="submit">删除事务</button>
+            </form>
+        </div>
+        <div class="section" style="float: right;">
+            <a href="/issue_center/modify/{{ issue.id }}"><button type="submit" class="submit">修改事务</button></a>
+        </div>
+    {% endif %}
     <div class="section">
         <table>
             <tr>

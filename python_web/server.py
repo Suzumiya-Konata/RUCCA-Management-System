@@ -473,6 +473,8 @@ def get_issue_detail(issue_id):
     value = cursor.fetchone()
     if value is None:
         return redirect('/issue_center')
+
+    host_id = int(value[1])
     
     value_list = list(value)
     cursor.execute('''
@@ -493,6 +495,10 @@ def get_issue_detail(issue_id):
     conn.commit()
     conn.close()
 
+    is_display_modify = 0
+    if host_id == current_user.id:
+        is_display_modify = 1
+
     issue_dict = {
         'id': value_list[0],
         'hostname': value_list[1],
@@ -500,7 +506,40 @@ def get_issue_detail(issue_id):
         'description': value_list[3],
         'is_finished': value_list[4]
     }
-    return render_template('issue_detail.html', issue=issue_dict)
+    return render_template('issue_detail.html', issue=issue_dict, is_display=is_display_modify)
+
+@app.route('/issue_center/<int:issue_id>', methods=['POST'])
+@login_required
+def delete_issue(issue_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT MAX(id) FROM issue")
+    max_id = cursor.fetchone()[0]
+
+    # 判断url中的id是否在合法，不合法则返回事务中心
+    if issue_id < 1 or issue_id > max_id:
+        return redirect('/issue_center')
+
+    cursor.execute("SELECT * FROM issue WHERE id = ?", (issue_id,))
+    value = cursor.fetchone()
+    if value is None:
+        return redirect('/issue_center')
+
+    # 判断是否是host，只有是host才继续进行删除，否则跳回issue_center
+    host_id = int(value[1])
+    if host_id != current_user.id:
+        return redirect('/issue_center')
+
+    cursor.execute('''
+        DELETE FROM issue
+        WHERE id = ?
+    ''', (issue_id,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/issue_center')
 
 @app.route('/issue_center/modify/<int:issue_id>', methods=['GET'])
 @login_required
@@ -520,14 +559,13 @@ def modify_issue_detail(issue_id):
     if value is None:
         return redirect('/issue_center')
     
-    #todo
-    #添加身份验证
-    cursor.execute("SELECT host_id FROM issue WHERE id = ?",(issue_id,))
-    #如果身份为host允许修改
-    values = cursor.fetchone()
-    if(values[0]!=current_user.id):
+    # TO 林润：
+    # 这里没必要再查询一次了
+    # 如果上面那个value是None的话已经返回了，那么此时的value中已经包含了当前issue的所有信息
+    # 如果身份为host允许修改
+    if(int(value[1]) != current_user.id):
         return redirect('/issue_center')
-    #如果身份不为host(可能需要添加对管理员允许),强制返回事务中心
+    # 如果身份不为host(可能需要添加对管理员允许),强制返回事务中心
 
 
     value_list = list(value)
