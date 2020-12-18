@@ -7,21 +7,21 @@ conn = sqlite3.connect("../../RUCCA.db")
 cursor = conn.cursor()
 
 # 注：sqlite不支持ALTER TABLE DROP COLUMN的形式
-cursor.execute("DROP TABLE issue")
+#cursor.execute("DROP TABLE maintenance_data")
 
 cursor.execute('''
-    CREATE TABLE issue(
+    CREATE TABLE maintenance_data(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         host_id INT,
-        start_date DATE,
-        description VARCHAR(100),
-        is_finished CHAR,
+        added_date DATE,
+        model VARCHAR(50),
+        description VARCHAR(2000),
         FOREIGN KEY (host_id)
             REFERENCES person_info(id)
     )
 ''')
 
-issue_list = [
+'''issue_list = [
     '坚持党对一切工作的领导。',
     '坚持以人民为中心。',
     '坚持全面深化改革。',
@@ -36,27 +36,27 @@ issue_list = [
     '坚持“一国两制”和推进祖国统一。',
     '坚持推动构建人类命运共同体。',
     '坚持全面从严治党。'
-]
+]'''
+import time
+localtime = time.localtime(time.time())
 
-count = 0
-for issue in issue_list:
+for count in range(1,20):
     host = 0
     if count % 2 == 0:
         host = 1
     else:
         host = 2
     cursor.execute('''
-        INSERT INTO issue(host_id, start_date, description, is_finished)
+        INSERT INTO maintenance_data(host_id, added_date, model, description)
         VALUES(?, ?, ?, ?)
     ''', 
     (host, 
-    '2020-12-{}'.format(str(7+count).zfill(2)), 
-    issue,
-    str(count % 2)
+    '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,), 
+    'model'+str(count),
+    'maintenance_data'+str(count)
     ))
-    count += 1
 
-cursor.execute("SELECT * FROM issue")
+cursor.execute("SELECT * FROM maintenance_data")
 value = cursor.fetchall()
 
 for i in value:
