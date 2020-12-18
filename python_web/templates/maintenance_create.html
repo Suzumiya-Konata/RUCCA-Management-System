@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>新建维修资料</p>
+    </div>
+    <form action="/maintenance_center/create" method="POST" id="new_data">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>创建人</th>
+                    <th>创建日期</th>
+                </tr>
+                <tr>
+                    <td class="selected">{{ maintenance.host }}</td>
+                    <td class="selected">{{ maintenance.date }}</td>
+                </tr>
+                <tr></tr>
+                <tr></tr>
+                <tr>
+                    <th>机器型号</th>
+                    <th><input maxlength="50" type="text" name="model"></th>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>具体描述</th>
+                </tr>
+                <tr>
+                    <th><input maxlength="2000" type="text" name="description" style="height: 80px;"></th>
+                </tr>
+           </table>
+        </div> 
+    </form>
+    <div class="section">
+        <a href="/maintenance_center"><button class="submit" style="float: right;">放弃新建资料</button></a>
+        <button type="submit" class="submit" form="new_data" style="text-align: center;">新建维修资料</button>
+    </div>
+</body>

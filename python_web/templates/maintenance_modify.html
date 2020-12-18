@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance_Detail:NO.{{ data.id }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>维修资料：第{{ data.id }}号</p>
+    </div>
+    <div class="section" style="float: left;">
+        <a href="/maintenance_center/{{ data.id }}"><button type="submit" class="submit">放弃编辑</button></a>
+    </div>
+    <form action="/maintenance_center/modify/{{ data.id }}" method="POST" id="modify_data" class="section">
+        <table>
+            <tr>
+                <td>资料id</td>
+                <td>{{ data.id }}</td>
+            </tr>
+            <tr>
+                <td>添加人</td>
+                <td>{{ data.hostname }}</td>
+            </tr>
+            <tr>
+                <td>添加日期</td>
+                <td>{{ data.date }}</td>
+            </tr>
+            <tr>
+                <td>机器型号</td>
+                <td><input name="model" type="text" value="{{ data.model }}"></td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <td>具体内容</td>
+            </tr>
+            <tr>
+                <td><textarea name="description" cols="30" rows="10" id="value"></textarea>></td>
+                <script>
+                    document.getElementById("value").value="{{ data.description }}"
+                </script>
+            </tr>
+        </table>
+    </div>
+    <div class="section" style="text-align: center;">
+        <button type="submit" class="submit" form="modify_data">确认编辑</button>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

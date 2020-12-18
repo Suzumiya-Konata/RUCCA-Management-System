@@ -652,7 +652,6 @@ def descrip_issue():
 def create_issue():
     #基本架构完成
     #可能需要身份核准
-    #没有对description进行防xss验证
     description = request.form['description']
     import time
     localtime = time.localtime(time.time())
@@ -691,6 +690,375 @@ def create_issue():
     conn.commit()
     conn.close()
     return redirect('/issue_center/'+str(values[0]))
+
+
+@app.route('/maintenance_center', methods=['GET'])
+@login_required
+def get_main_data_from_center():
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/maintenance_center')
+    else:
+        return redirect('/maintenance_center?' + '&'.join(new_index_list))
+
+    # 参数转换，将GET得到的参数转化为SQL查询的参数
+    args_dict = {}
+    args_trans = {
+        'data_id': 'id',
+        'host': 'host_id',
+        'model': 'model',
+        'date': 'added_date'
+    }
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    for arg in args_trans.keys():
+        if request.args.get(arg) is not None:
+            if arg == 'data_id':
+                if str(request.args.get(arg)).isdigit():
+                    args_dict[args_trans[arg]] = int(request.args.get(arg))
+                else:
+                    return redirect('/maintenance_center')
+                continue
+            elif arg == 'host':
+                cursor.execute('''
+                    SELECT id
+                    FROM person_info
+                    WHERE username = ?
+                ''', (request.args.get(arg),))
+                value = cursor.fetchall()
+                if len(value) == 0:
+                    return redirect('/maintenance_center')
+                args_dict[args_trans[arg]] = value[0][0]
+                continue
+            args_dict[args_trans[arg]] = request.args.get(arg)
+    if request.args.get('my_data') is not None:
+        args_dict['host_id'] = current_user.id
+    
+    # 构建SQL查询语句
+    sql_query = 'SELECT * FROM maintenance_data '
+    args_list = []
+    if len(args_dict) > 0:
+        sql_query += 'WHERE '
+        query_list = []
+        for key in args_dict.keys():
+            query_list.append(key + ' = ?')
+            args_list.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY id DESC'
+    
+    # 查询部分
+    if len(args_dict) > 0:
+        cursor.execute(sql_query, args_list)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                return redirect('/maintenance_center')
+        else:
+            return redirect('/maintenance_center')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    # 数据转换：将id转换为用户名
+    for i in range(len(page_item)):
+        tmp = list(page_item[i])
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+        ''', (tmp[1],))
+        value = cursor.fetchone()
+        if value is None:
+            tmp[1] = 'None'
+        else:
+            tmp[1] = value[0]
+        page_item[i] = tmp
+    
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    result = re.search(r'page=[0-9]+', current_url)
+    if result != None:
+        first_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(1), current_url)
+        end_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(all_page_num), current_url)
+        prev_page_url = current_url
+        if page_num > 1:
+            prev_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num-1), current_url)
+        next_page_url = current_url
+        if page_num < all_page_num:
+            next_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num+1), current_url)
+    else: # 现在已经在第一页中
+        if len(index_list) == 0:
+            first_page_url = current_url + 'page=1'
+            end_page_url = current_url + 'page={}'.format(all_page_num)
+            prev_page_url = first_page_url
+            if all_page_num == 1:
+                next_page_url = first_page_url
+            else:
+                next_page_url = current_url + 'page=2'
+        else:
+            first_page_url = current_url + '&page=1'
+            end_page_url = current_url + '&page={}'.format(all_page_num)
+            prev_page_url = first_page_url
+            if all_page_num == 1:
+                next_page_url = first_page_url
+            else:
+                next_page_url = current_url + '&page=2'
+
+    page_info = {
+        'first_page_url': first_page_url,
+        'prev_page_url': prev_page_url,
+        'next_page_url': next_page_url,
+        'end_page_url': end_page_url,
+        'cur_page_num': page_num,
+        'max_page_num': all_page_num
+    }
+
+    return render_template('maintenance_center.html', datas=page_item, page_info=page_info)
+
+
+@app.route('/maintenance_center/<int:data_id>', methods=['GET'])
+@login_required
+def get_data_detail(data_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT MAX(id) FROM maintenance_data")
+    max_id = cursor.fetchone()[0]
+
+    # 判断url中的id是否在合法范围内，不合法则返回maintenance_center
+    if data_id < 1 or data_id > max_id:
+        return redirect('/maintenance_center')
+
+    cursor.execute("SELECT * FROM maintenance_data WHERE id = ?", (data_id,))
+    value = cursor.fetchone()
+    if value is None:
+        return redirect('/maintenance_center')
+
+    host_id = int(value[1])
+    
+    value_list = list(value)
+    cursor.execute('''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+    ''', (value_list[1],))
+    value = cursor.fetchone()
+    if value is None:
+        value_list[1] = 'None'
+    else:
+        value_list[1] = value[0]
+
+    conn.commit()
+    conn.close()
+
+    is_display_modify = 0
+    if host_id == current_user.id:
+        is_display_modify = 1
+
+    data_dict = {
+        'id': value_list[0],
+        'hostname': value_list[1],
+        'date': value_list[2],
+        'model': value_list[3],
+        'description': value_list[4]
+    }
+    return render_template('maintenance_detail.html', data=data_dict, is_display=is_display_modify)
+
+@app.route('/maintenance_center/<int:data_id>', methods=['POST'])
+@login_required
+def delete_maintenance_data(data_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT MAX(id) FROM maintenance_data")
+    max_id = cursor.fetchone()[0]
+
+    # 判断url中的id是否在合法，不合法则返回maintenance_center
+    if data_id < 1 or data_id > max_id:
+        return redirect('/maintenance_center')
+
+    cursor.execute("SELECT * FROM maintenance_data WHERE id = ?", (data_id,))
+    value = cursor.fetchone()
+    if value is None:
+        return redirect('/maintenance_center')
+
+    # 判断是否是host，只有是host才继续进行删除，否则跳回maintenance_center
+    host_id = int(value[1])
+    if host_id != current_user.id:
+        return redirect('/maintenance_center')
+
+    cursor.execute('''
+        DELETE FROM maintenance_data
+        WHERE id = ?
+    ''', (data_id,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/maintenance_center')
+
+@app.route('/maintenance_center/modify/<int:data_id>', methods=['GET'])
+@login_required
+def edit_maintenence(data_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT MAX(id) FROM maintenance_data")
+    max_id = cursor.fetchone()[0]
+
+    # 判断url中的id是否在合法，不合法则返回maintenance_center
+    if data_id < 1 or data_id > max_id:
+        return redirect('/maintenance_center')
+
+    cursor.execute("SELECT * FROM maintenance_data WHERE id = ?", (data_id,))
+    value = cursor.fetchone()
+    if value is None:
+        return redirect('/maintenance_center')
+
+    # 判断是否是host，只有是host才继续进行编辑，否则跳回maintenance_center
+
+    host_id = int(value[1])
+    
+    value_list = list(value)
+    cursor.execute('''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+    ''', (value_list[1],))
+    value = cursor.fetchone()
+    if value is None:
+        value_list[1] = 'None'
+    else:
+        value_list[1] = value[0]
+
+    conn.commit()
+    conn.close()
+
+    is_display_modify = 0
+    if host_id == current_user.id:
+        is_display_modify = 1
+
+    data_dict = {
+        'id': value_list[0],
+        'hostname': value_list[1],
+        'date': value_list[2],
+        'model': value_list[3],
+        'description': value_list[4]
+    }
+    return render_template('maintenance_modify.html', data=data_dict, is_display=is_display_modify)
+
+@app.route('/maintenance_center/modify/<int:data_id>', methods=['POST'])
+@login_required
+def modify_maintenence(data_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT MAX(id) FROM maintenance_data")
+    max_id = cursor.fetchone()[0]
+
+    # 判断url中的id是否在合法，不合法则返回maintenance_center
+    if data_id < 1 or data_id > max_id:
+        return redirect('/maintenance_center')
+
+    cursor.execute("SELECT * FROM maintenance_data WHERE id = ?", (data_id,))
+    value = cursor.fetchone()
+    if value is None:
+        return redirect('/maintenance_center')
+
+    # 判断是否是host，只有是host才继续进行编辑，否则跳回maintenance_center
+    cursor.execute(
+        '''
+        UPDATE maintenance_data
+        SET
+            model = ? ,
+            description = ?
+        WHERE id = ?
+        ''',(request.form['model'],request.form['description'],data_id,)
+    )
+    conn.commit()
+    conn.close()
+    return redirect('/maintenance_center/'+str(data_id))
+
+@app.route('/maintenance_center/create', methods=['GET'])
+@login_required
+def describ_maintenance():
+    #创建资料
+    #生成除了描述外的其他值
+    
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+        ''',(current_user.id,)
+    )
+    value = cursor.fetchone()
+    conn.commit()
+    conn.close()
+
+    import time
+    localtime = time.localtime(time.time())
+    date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
+    maintenance_dict = {
+        'host':value[0],
+        'date':date
+    }
+    return render_template('maintenance_create.html', maintenance=maintenance_dict)
+
+
+@app.route('/maintenance_center/create', methods=['POST'])
+@login_required
+def create_maintenance():
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+
+    import time
+    localtime = time.localtime(time.time())
+    date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
+    cursor.execute('''
+        INSERT INTO maintenance_data(host_id, added_date, model, description)
+        VALUES(?, ?, ?, ?)
+    ''', 
+    (current_user.id, 
+    date, 
+    request.form['model'],
+    request.form['description']
+    ))
+    conn.commit()
+    conn.close()
+    return redirect('/maintenance_center')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
