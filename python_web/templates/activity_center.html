@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>活动中心</p>
+    </div>
+    <div class="section">
+        <table>
+            <a href="/maintenance_center/create"><button class="submit" style="float: right;">新建活动</button></a>
+            <a href="/index"><button class="submit" style="float: left;">返回主界面</button></a>
+            <p></p>
+            <p></p>
+        </table>
+    </div>
+    <div class="section">
+        <form action="/activity_center" method="GET" id="search" style="text-align: center;">
+            <p>我创建的：<input type="checkbox" name="my_create" value="true"></p>
+            <p>我参加的：<input type="checkbox" name="my_participate" value="true"></p>
+            <p>活动id：<input type="text" name="id"></p>
+            <p>活动名：<input type="text" name="name"></p>
+            <p>添加人：<input type="text" name="host_id"></p>
+            <p>添加日期：<input type="date" name="date" value="年/月/日"></p>
+            
+        </form>
+    </div>
+    <div class="section" style="text-align: center;">
+        <button type="submit" class="submit" form="search">查询</button>
+        <button type="reset" class="submit" form="search">重置</button>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <th>活动id</th>
+                <th>活动名</th>
+                <th>活动日期</th>
+                <th>活动地点</th>
+                <th>活动描述</th>
+                <th>活动举办人</th>
+                <th>链接</th>
+            </tr>
+            {% for data in datas %}
+                <tr>
+                    {% for i in data %}
+                    <td>{{ i }}</td>
+                    {% endfor %}
+                    <td><a href="/activity_center/{{ data[0] }}">前往</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <td><a href={{ page_info.first_page_url }}>首页</a></td>
+                <td><a href={{ page_info.prev_page_url }}>上一页</a></td>
+                <td><a href={{ page_info.next_page_url }}>下一页</a></td>
+                <td><a href={{ page_info.end_page_url }}>末页</a></td>
+            </tr>
+        </table>
+        <p>第{{ page_info.cur_page_num }}页，共{{ page_info.max_page_num }}页。</p>
+        <p>前往<input type="text" name="page" form="search">页<button type="submit" class="submit" form="search">GO</button></p>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>

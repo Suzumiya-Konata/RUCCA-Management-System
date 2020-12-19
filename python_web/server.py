@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, session, redirect
 import sqlite3
 from datetime import timedelta
 from model import User
+from module import static_url
 from flask_login import login_user, login_required
 from flask_login import LoginManager, current_user
 from flask_login import logout_user
@@ -218,7 +219,6 @@ def modifying_info_detail():
         return redirect('/signin')
     else:
         return redirect('/info_detail')
-    return '''<h1>to do by lr</h1>'''
 
 @app.route('/logout')
 @login_required
@@ -417,42 +417,7 @@ def get_issue_from_center():
     conn.close()
 
     # 翻页保持url相对不变
-    result = re.search(r'page=[0-9]+', current_url)
-    if result != None:
-        first_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(1), current_url)
-        end_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(all_page_num), current_url)
-        prev_page_url = current_url
-        if page_num > 1:
-            prev_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num-1), current_url)
-        next_page_url = current_url
-        if page_num < all_page_num:
-            next_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num+1), current_url)
-    else: # 现在已经在第一页中
-        if len(index_list) == 0:
-            first_page_url = current_url + 'page=1'
-            end_page_url = current_url + 'page={}'.format(all_page_num)
-            prev_page_url = first_page_url
-            if all_page_num == 1:
-                next_page_url = first_page_url
-            else:
-                next_page_url = current_url + 'page=2'
-        else:
-            first_page_url = current_url + '&page=1'
-            end_page_url = current_url + '&page={}'.format(all_page_num)
-            prev_page_url = first_page_url
-            if all_page_num == 1:
-                next_page_url = first_page_url
-            else:
-                next_page_url = current_url + '&page=2'
-
-    page_info = {
-        'first_page_url': first_page_url,
-        'prev_page_url': prev_page_url,
-        'next_page_url': next_page_url,
-        'end_page_url': end_page_url,
-        'cur_page_num': page_num,
-        'max_page_num': all_page_num
-    }
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
 
     return render_template('issue_center.html', issues=page_item, page_info=page_info)
 
@@ -806,45 +771,9 @@ def get_main_data_from_center():
     conn.close()
 
     # 翻页保持url相对不变
-    result = re.search(r'page=[0-9]+', current_url)
-    if result != None:
-        first_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(1), current_url)
-        end_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(all_page_num), current_url)
-        prev_page_url = current_url
-        if page_num > 1:
-            prev_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num-1), current_url)
-        next_page_url = current_url
-        if page_num < all_page_num:
-            next_page_url = re.sub(r'page=[0-9]+', 'page={}'.format(page_num+1), current_url)
-    else: # 现在已经在第一页中
-        if len(index_list) == 0:
-            first_page_url = current_url + 'page=1'
-            end_page_url = current_url + 'page={}'.format(all_page_num)
-            prev_page_url = first_page_url
-            if all_page_num == 1:
-                next_page_url = first_page_url
-            else:
-                next_page_url = current_url + 'page=2'
-        else:
-            first_page_url = current_url + '&page=1'
-            end_page_url = current_url + '&page={}'.format(all_page_num)
-            prev_page_url = first_page_url
-            if all_page_num == 1:
-                next_page_url = first_page_url
-            else:
-                next_page_url = current_url + '&page=2'
-
-    page_info = {
-        'first_page_url': first_page_url,
-        'prev_page_url': prev_page_url,
-        'next_page_url': next_page_url,
-        'end_page_url': end_page_url,
-        'cur_page_num': page_num,
-        'max_page_num': all_page_num
-    }
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
 
     return render_template('maintenance_center.html', datas=page_item, page_info=page_info)
-
 
 @app.route('/maintenance_center/<int:data_id>', methods=['GET'])
 @login_required
@@ -1038,7 +967,6 @@ def describ_maintenance():
     }
     return render_template('maintenance_create.html', maintenance=maintenance_dict)
 
-
 @app.route('/maintenance_center/create', methods=['POST'])
 @login_required
 def create_maintenance():
@@ -1061,6 +989,135 @@ def create_maintenance():
     conn.close()
     return redirect('/maintenance_center')
 
+@app.route('/activity_center', methods=['GET'])
+@login_required
+def get_activity_from_center():
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    print(new_index_list)
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/activity_center')
+    else:
+        return redirect('/activity_center?' + '&'.join(new_index_list))
+
+    # 参数转换，将GET得到的参数转化为SQL查询的参数
+    args_dict = {}
+    args_trans = ['id', 'host_id', 'date', 'name']
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    for arg in args_trans:
+        if request.args.get(arg) is not None:
+            if arg == 'id':
+                if str(request.args.get(arg)).isdigit():
+                    args_dict[arg] = int(request.args.get(arg))
+                else:
+                    return redirect('/activity_center')
+            elif arg == 'host_id':
+                cursor.execute('''
+                    SELECT id
+                    FROM person_info
+                    WHERE username = ?
+                ''', (request.args.get(arg),))
+                value = cursor.fetchall()
+                if len(value) == 0:
+                    return redirect('/activity_center')
+                args_dict[arg] = value[0][0]
+            else:
+                args_dict[arg] = request.args.get(arg)
+    if request.args.get('my_create') is not None:
+        args_dict['host_id'] = current_user.id
+    
+    # 构建SQL查询语句
+    if request.args.get('my_participate') is not None:
+        sql_query = '''
+            SELECT activity.id, activity.name, activity.date, activity.location, activity.description, activity.host_id
+            FROM activity, activity_participate
+            WHERE activity.id = activity_participate.activity_id AND activity_participate.person_id = ? 
+        '''
+        args_list = [current_user.id]
+        if len(args_dict) > 0:
+            sql_query += 'AND '
+            query_list = []
+            for key in args_dict.keys():
+                query_list.append("activity." + key + ' = ?')
+                args_list.append(args_dict[key])
+            sql_query += ' AND '.join(query_list)
+        sql_query += ' ORDER BY id DESC'
+    else:
+        sql_query = '''SELECT id, name, date, location, description, host_id
+        FROM activity '''
+        args_list = []
+        if len(args_dict) > 0:
+            sql_query += 'WHERE '
+            query_list = []
+            for key in args_dict.keys():
+                query_list.append(key + ' = ?')
+                args_list.append(args_dict[key])
+            sql_query += ' AND '.join(query_list)
+        sql_query += ' ORDER BY id DESC'
+    
+    print(sql_query)
+    # 查询部分
+    if len(args_list) > 0:
+        cursor.execute(sql_query, args_list)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                return redirect('/activity_center')
+        else:
+            return redirect('/activity_center')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    # 数据转换：将id转换为用户名
+    for i in range(len(page_item)):
+        tmp = list(page_item[i])
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+        ''', (tmp[5],))
+        value = cursor.fetchone()
+        if value is None:
+            tmp[5] = 'None'
+        else:
+            tmp[5] = value[0]
+        page_item[i] = tmp
+    
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+
+    return render_template('activity_center.html', datas=page_item, page_info=page_info)
 
 if __name__ == '__main__':
     app.run(debug=True)
