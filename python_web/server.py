@@ -749,7 +749,8 @@ def get_main_data_from_center():
         args_dict['host_id'] = current_user.id
     
     # 构建SQL查询语句
-    sql_query = 'SELECT * FROM maintenance_data '
+    sql_query = '''SELECT id,host_id,added_date,model
+     FROM maintenance_data '''
     args_list = []
     if len(args_dict) > 0:
         sql_query += 'WHERE '
@@ -891,6 +892,7 @@ def get_data_detail(data_id):
         'model': value_list[3],
         'description': value_list[4]
     }
+    print(data_dict)
     return render_template('maintenance_detail.html', data=data_dict, is_display=is_display_modify)
 
 @app.route('/maintenance_center/<int:data_id>', methods=['POST'])
