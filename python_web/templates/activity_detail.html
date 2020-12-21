@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act_Detail:NO.{{ act.id }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>活动详情：{{ act.id }}号活动</p>
+    </div>
+    <div class="section" style="float: left;">
+        <a href="/activity_center"><button type="submit" class="submit">返回活动中心</button></a>
+    </div>
+    {% if is_display == 1 %}
+        <div class="section" style="float: right;">
+            <form action="/activity_center/{{ act.id }}" method="POST">
+                <button type="submit" class="submit" name="action_type" value="drop">取消活动</button>
+            </form>
+        </div>
+        <div class="section" style="float: right;">
+            <a href="/activity_center/modify/{{ act.id }}"><button type="submit" class="submit">修改活动详情</button></a>
+        </div>
+    {% endif %}
+    <div class="section">
+        <table>
+            <tr>
+                <td>活动id</td>
+                <td>{{ act.id }}</td>
+            </tr>
+            <tr>
+                <td>活动名称</td>
+                <td>{{ act.name }}</td>
+            </tr>
+            <tr>
+                <td>创建人</td>
+                <td>{{ act.hostname }}</td>
+            </tr>
+            <tr>
+                <td>开始日期</td>
+                <td>{{ act.date }}</td>
+            </tr>
+            <tr>
+                <td>活动地点</td>
+                <td>{{ act.location }}</td>
+            </tr>
+            <tr>
+                <td>活动描述</td>
+                <td>{{ act.description }}</td>
+            </tr>
+        </table>
+    </div>
+    {% if is_participate == 1 %}
+        <div class="section" style="text-align: center;">
+            <form action="/activity_center/{{ act.id }}" method="POST">
+                <button type="submit" class="submit" name="action_type" value="quit">退出活动</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="section" style="text-align: center;">
+            <form action="/activity_center/{{ act.id }}" method="POST">
+                <button type="submit" class="submit" name="action_type" value="part">参加活动</button>
+            </form>
+        </div>
+    {% endif %}
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

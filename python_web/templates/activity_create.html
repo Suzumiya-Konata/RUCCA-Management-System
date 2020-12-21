@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>新建活动</p>
+    </div>
+    <form action="/activity_center/create" method="POST" id="new_activity">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>创建人</th>
+                    <td>{{ act.host }}</td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>活动名称</th>
+                    <th><input maxlength="20" type="text" name="name"></th>
+                </tr>
+                <tr>
+                    <th>活动地点</th>
+                    <th><input maxlength="40" type="text" name="location"></th>
+                </tr>
+                <tr>
+                    <th>活动日期</th>
+                    <th><input type="date" name="date" value="年/月/日"></th>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>活动描述</th>
+                </tr>
+                <tr>
+                    <td><textarea name="description" cols="30" rows="10" maxlength="50" ></textarea>></td>
+                </tr>
+           </table>
+        </div> 
+    </form>
+    <div class="section">
+        <a href="/activity_center"><button class="submit" style="float: right;">放弃活动创建</button></a>
+        <button type="submit" class="submit" form="new_activity" style="text-align: center;">创建活动</button>
+    </div>
+</body>
