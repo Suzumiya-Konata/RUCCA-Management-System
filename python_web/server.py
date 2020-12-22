@@ -623,16 +623,7 @@ def create_issue():
     date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
     conn = sqlite3.connect("../../RUCCA.db")
     cursor = conn.cursor()
-    cursor.execute(
-        '''
-        SELECT username
-        FROM person_info
-        WHERE id = ?
-        ''',(current_user.id,)
-    )
-    values = cursor.fetchone()
     issue_dict = {
-        'host':values[0],
         'date':date,
         'description':description,
         'is_finished':0
@@ -1000,7 +991,7 @@ def get_activity_from_center():
     else:
         index_list = indexes.split('&')
     new_index_list = []
-    print(new_index_list)
+    #print(new_index_list)
     for i in index_list:
         if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
             continue
@@ -1069,7 +1060,7 @@ def get_activity_from_center():
             sql_query += ' AND '.join(query_list)
         sql_query += ' ORDER BY id DESC'
     
-    print(sql_query)
+    #print(sql_query)
     # 查询部分
     if len(args_list) > 0:
         cursor.execute(sql_query, args_list)
@@ -1119,5 +1110,157 @@ def get_activity_from_center():
 
     return render_template('activity_center.html', datas=page_item, page_info=page_info)
 
+@app.route('/activity_center/<int:act_id>', methods=['GET'])
+@login_required
+def activity_detail(act_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        SELECT *
+        FROM activity
+        WHERE id = ?
+        ''',(act_id,)
+    )
+    values = cursor.fetchone()
+    host_id = values[5]
+    cursor.execute(
+        '''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+        ''',(host_id,)
+    )
+    act_detail = {
+        'id':values[0],
+        'name':values[1],
+        'date':values[2],
+        'location':values[3],
+        'description':values[4],
+        'hostname':host_id
+    }
+    #print(act_detail)
+
+    cursor.execute(
+        '''
+        SELECT *
+        FROM activity_participate
+        WHERE person_id = ? AND activity_id = ?
+        ''',(current_user.id,act_id,)
+    )
+    is_participate = cursor.fetchone()
+    conn.commit()
+    conn.close()
+
+    if host_id==current_user.id:
+        is_display_modify = 1
+    else:
+        is_display_modify = 0
+    
+    if (not is_participate):
+        status = 0
+    else:
+        status = 1
+    return render_template('activity_detail.html', act=act_detail, is_display=is_display_modify,is_participate=status)
+
+@app.route('/activity_center/<int:act_id>', methods=['POST'])
+@login_required
+def delete_activity(act_id):
+    if(request.form['action_type']=='drop'):
+        conn = sqlite3.connect('../../RUCCA.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            SELECT host_id
+            FROM activity
+            WHERE id = ?
+            ''',(act_id,)
+        )
+        host_id = cursor.fetchone()
+        if(host_id[0]!=current_user.id):
+            conn.commit()
+            conn.close()
+        else:
+            cursor.execute(
+                '''
+                DELETE FROM activity
+                WHERE id = ?
+                ''',(act_id,)
+            )
+            cursor.execute(
+                '''
+                DELETE FROM activity_participate
+                WHERE activity_id = ?
+                ''',(act_id,)
+            )
+            conn.commit()
+            conn.close()
+        return redirect('/activity_center')
+    elif(request.form['action_type']=='part'):
+        conn = sqlite3.connect('../../RUCCA.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            INSERT INTO activity_participate VALUES(?, ?, 'Soudayo!')
+            ''',(act_id,current_user.id,)
+        )
+        conn.commit()
+        conn.close()
+        
+        return redirect('/activity_center/'+str(act_id))
+    elif(request.form['action_type']=='quit'):
+        conn = sqlite3.connect('../../RUCCA.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            DELETE FROM activity_participate 
+            WHERE activity_id = ? AND person_id = ?
+            ''',(act_id,current_user.id,)
+        )
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/'+str(act_id))
+
+@app.route('/activity_center/create',methods=['GET'])
+@login_required
+def edit_new_activity():
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+        ''',(current_user.id,)
+    )
+    values = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    act_dict={
+        'host':values[0]
+    }
+    return render_template('activity_create.html',act=act_dict)
+
+@app.route('/activity_center/create',methods=['POST'])
+@login_required
+def create_new_activity():
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        INSERT INTO activity(name, date, location, description, host_id)
+        VALUES(?, ?, ?, ?, ?)
+        ''',
+        (
+            request.form['name'],
+            request.form['date'],
+            request.form['location'],
+            request.form['description'],
+            current_user.id
+        )
+    )
+    conn.commit()
+    conn.close()
+    return redirect('/activity_center')
 if __name__ == '__main__':
     app.run(debug=True)

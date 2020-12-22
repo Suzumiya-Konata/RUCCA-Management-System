@@ -14,7 +14,7 @@
     <div class="section" style="float: left;">
         <a href="/maintenance_center"><button type="submit" class="submit">返回维修资料中心</button></a>
     </div>
-    {% if is_display == 1 %}
+    
         <div class="section" style="float: right;">
             <form action="/maintenance_center/{{ data.id }}" method="POST">
                 <button type="submit" class="submit">删除资料</button>

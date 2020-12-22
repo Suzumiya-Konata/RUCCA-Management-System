@@ -8,6 +8,12 @@ cursor = conn.cursor()
 
 # 注：sqlite不支持ALTER TABLE DROP COLUMN的形式
 #cursor.execute("DROP TABLE maintenance_data")
+
+cursor.execute(
+    '''
+    DROP TABLE act_attend
+    '''
+)
 """
 cursor.execute('''
     CREATE TABLE activity(
@@ -23,7 +29,6 @@ cursor.execute('''
 ''')
 
 cursor.execute("INSERT INTO activity(name, date, location, description, host_id) VALUES('Foundation', '2020-12-19', 'RUC TouHuu.7', 'Blessings for the birthay of RUCCA Management System', 1)")
-"""
 cursor.execute('''
     CREATE TABLE activity_participate(
         activity_id INT,
@@ -38,6 +43,6 @@ cursor.execute('''
 ''')
 
 cursor.execute("INSERT INTO activity_participate VALUES(1, 1, 'Soudayo!')")
-
+"""
 conn.commit()
 conn.close()
