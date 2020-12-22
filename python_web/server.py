@@ -69,7 +69,7 @@ def index_page():
     }
     conn.commit()
     conn.close()
-    return render_template("index.html", user=user_dict)
+    return render_template("index.html", user=user_dict, is_admin=current_user.is_admin)
 
 @app.route('/info_detail', methods=['GET'])
 @login_required
@@ -812,7 +812,6 @@ def get_data_detail(data_id):
         'model': value_list[3],
         'description': value_list[4]
     }
-    print(data_dict)
     return render_template('maintenance_detail.html', data=data_dict, is_display=is_display_modify)
 
 @app.route('/maintenance_center/<int:data_id>', methods=['POST'])
@@ -1262,5 +1261,155 @@ def create_new_activity():
     conn.commit()
     conn.close()
     return redirect('/activity_center')
+
+@app.route('/reply', methods=['GET'])
+def get_activity_from_out():
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    #print(new_index_list)
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/reply')
+    else:
+        return redirect('/reply?' + '&'.join(new_index_list))
+
+    # 参数转换，将GET得到的参数转化为SQL查询的参数
+    args_dict = {}
+    args_trans = ['id', 'host_id', 'date', 'name']
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    for arg in args_trans:
+        if request.args.get(arg) is not None:
+            if arg == 'id':
+                if str(request.args.get(arg)).isdigit():
+                    args_dict[arg] = int(request.args.get(arg))
+                else:
+                    return redirect('/activity_center')
+            elif arg == 'host_id':
+                cursor.execute('''
+                    SELECT id
+                    FROM person_info
+                    WHERE username = ?
+                ''', (request.args.get(arg),))
+                value = cursor.fetchall()
+                if len(value) == 0:
+                    return redirect('/activity_center')
+                args_dict[arg] = value[0][0]
+            else:
+                args_dict[arg] = request.args.get(arg)\
+    
+    sql_query = '''SELECT id, name, date, location, description, host_id
+        FROM activity '''
+    args_list = []
+    if len(args_dict) > 0:
+        sql_query += 'WHERE '
+        query_list = []
+        for key in args_dict.keys():
+            query_list.append(key + ' = ?')
+            args_list.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY id DESC'
+
+    # 查询部分
+    if len(args_list) > 0:
+        cursor.execute(sql_query, args_list)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                return redirect('/reply')
+        else:
+            return redirect('/reply')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    # 数据转换：将id转换为用户名
+    for i in range(len(page_item)):
+        tmp = list(page_item[i])
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+        ''', (tmp[5],))
+        value = cursor.fetchone()
+        if value is None:
+            tmp[5] = 'None'
+        else:
+            tmp[5] = value[0]
+        page_item[i] = tmp
+    
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+    return render_template('reply_list.html', datas=page_item, page_info=page_info)
+
+@app.route('/reply/<int:reply_id>', methods=['GET'])
+def get_reply_form(reply_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM activity WHERE id = ?", (reply_id,))
+    value = cursor.fetchall()
+
+    if len(value) == 0:
+        return '<script>alert("Invalid url!");window.location.href = "/reply"</script>'
+
+    return render_template('reply_form.html',reply_id=reply_id)
+
+@app.route('/reply/<int:reply_id>', methods=['POST'])
+def post_reply_form(reply_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM activity WHERE id = ?", (reply_id,))
+    value = cursor.fetchall()
+
+    if len(value) == 0:
+        return '<script>alert("Invalid url!");window.location.href = "/reply"</script>'
+
+    cursor.execute(
+        '''
+        INSERT INTO reply(activity_id, submitter, contact, content, suggestion)
+        VALUES(?, ?, ?, ?, ?)
+        ''',
+        (
+            reply_id,
+            request.form['submitter'],
+            request.form['contact'],
+            request.form['content'],
+            request.form['suggestion']
+        )
+    )
+    conn.commit()
+    conn.close()
+    return redirect('/reply')
+
 if __name__ == '__main__':
     app.run(debug=True)

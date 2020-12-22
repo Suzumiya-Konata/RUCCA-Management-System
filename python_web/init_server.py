@@ -8,13 +8,13 @@ cursor = conn.cursor()
 
 # 注：sqlite不支持ALTER TABLE DROP COLUMN的形式
 #cursor.execute("DROP TABLE maintenance_data")
-
+"""
 cursor.execute(
     '''
     DROP TABLE act_attend
     '''
 )
-"""
+
 cursor.execute('''
     CREATE TABLE activity(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,6 +43,28 @@ cursor.execute('''
 ''')
 
 cursor.execute("INSERT INTO activity_participate VALUES(1, 1, 'Soudayo!')")
+
+cursor.execute('''
+    CREATE TABLE reply(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        activity_id INT,
+        submitter VARCHAR(10),
+        contact VARCHAR(20),
+        content VARCHAR(100),
+        suggestion VARCHAR(100),
+        FOREIGN KEY (activity_id)
+            REFERENCES activity(id)
+    )
+''')
 """
+# 获取表中的信息
+cursor.execute("pragma table_info(person_info)")
+value = cursor.fetchall()
+
+print(value)
+
+cursor.execute("UPDATE person_info SET job = '5' WHERE id = 1")
+cursor.execute("UPDATE person_info SET job = '1' WHERE id = 2")
+
 conn.commit()
 conn.close()

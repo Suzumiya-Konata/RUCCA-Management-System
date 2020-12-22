@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>新建反馈</p>
+    </div>
+    <form action="/reply/{{ reply_id }}" method="POST" id="new_reply">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>活动id</th>
+                    <td>{{ reply_id }}</td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>反馈人姓名</th>
+                    <th><input maxlength="20" type="text" name="submitter"></th>
+                </tr>
+                <tr>
+                    <th>联系方式</th>
+                    <th><input maxlength="20" type="text" name="contact"></th>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>反馈内容</th>
+                </tr>
+                <tr>
+                    <td><textarea name="content" cols="30" rows="10" maxlength="50" ></textarea></td>
+                </tr>
+                <tr>
+                    <th>后续建议</th>
+                </tr>
+                <tr>
+                    <td><textarea name="suggestion" cols="30" rows="10" maxlength="50" ></textarea></td>
+                </tr>
+           </table>
+        </div> 
+    </form>
+    <div class="section">
+        <a href="/reply"><button class="submit" style="float: right;">放弃活动创建</button></a>
+        <button type="submit" class="submit" form="new_reply" style="text-align: center;">创建活动</button>
+    </div>
+</body>
