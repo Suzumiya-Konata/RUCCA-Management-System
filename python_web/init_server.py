@@ -63,8 +63,5 @@ value = cursor.fetchall()
 
 print(value)
 
-cursor.execute("UPDATE person_info SET job = '5' WHERE id = 1")
-cursor.execute("UPDATE person_info SET job = '1' WHERE id = 2")
-
 conn.commit()
 conn.close()

@@ -164,52 +164,55 @@ def modifying_info_detail():
     if(request.form['password']!=""):
         flag2 = 1
     #数据库内容修改
-    if(flag2):
-        if(flag1):
-            cursor.execute(
-                '''
-                UPDATE person_info
-                SET
-                    username = ? ,
-                    password_hash = ? ,
-                    phone = ? ,
-                    description = ?
-                WHERE id = ?
-                ''',(request.form['username'],generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],current_user.id,)
-            )
+    try:
+        if(flag2):
+            if(flag1):
+                cursor.execute(
+                    '''
+                    UPDATE person_info
+                    SET
+                        username = ? ,
+                        password_hash = ? ,
+                        phone = ? ,
+                        description = ?
+                    WHERE id = ?
+                    ''',(request.form['username'],generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],current_user.id,)
+                )
+            else:
+                cursor.execute(
+                    '''
+                    UPDATE person_info
+                    SET
+                        password_hash = ? ,
+                        phone = ? ,
+                        description = ?
+                    WHERE id = ?
+                    ''',(generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],current_user.id,)
+                )
         else:
-            cursor.execute(
+            if(flag1):
+                cursor.execute(
+                    '''
+                    UPDATE person_info
+                    SET
+                        username = ? ,
+                        phone = ? ,
+                        description = ?
+                    WHERE id = ?
+                    ''',(request.form['username'],request.form['phone'],request.form['description'],current_user.id,)
+                )
+            else:
+                cursor.execute(
                 '''
                 UPDATE person_info
                 SET
-                    password_hash = ? ,
                     phone = ? ,
                     description = ?
                 WHERE id = ?
-                ''',(generate_password_hash(request.form['password']),request.form['phone'],request.form['description'],current_user.id,)
+                ''',(request.form['phone'],request.form['description'],current_user.id,)
             )
-    else:
-        if(flag1):
-            cursor.execute(
-                '''
-                UPDATE person_info
-                SET
-                    username = ? ,
-                    phone = ? ,
-                    description = ?
-                WHERE id = ?
-                ''',(request.form['username'],request.form['phone'],request.form['description'],current_user.id,)
-            )
-        else:
-            cursor.execute(
-            '''
-            UPDATE person_info
-            SET
-                phone = ? ,
-                description = ?
-            WHERE id = ?
-            ''',(request.form['phone'],request.form['description'],current_user.id,)
-        )
+    except:
+        return '<script>alert("您输入的数据不合法，请您重新输入！");window.location.href="/info_modify"</script>'
     conn.commit()
     conn.close()
 
@@ -219,6 +222,110 @@ def modifying_info_detail():
         return redirect('/signin')
     else:
         return redirect('/info_detail')
+
+@app.route('/member_list', methods=['GET'])
+@login_required
+def get_member_list():
+    if current_user.is_admin == False:
+        redirect('/index')
+    
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/member_list')
+    else:
+        return redirect('/member_list?' + '&'.join(new_index_list))
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("pragma table_info(person_info)")
+    value = cursor.fetchall()
+    args_list = []
+    for i in value:
+        if i[1] == 'password_hash':
+            continue
+        args_list.append(i[1])
+
+    args_dict = {}
+    for key in args_list:
+        if request.args.get(key) is not None:
+            args_dict[key] = request.args.get(key)
+    
+    # 构建SQL查询语句
+    sql_query = 'SELECT {} FROM person_info '.format(','.join(args_list))
+    args_l = []
+    if len(args_dict) > 0:
+        sql_query += 'WHERE '
+        query_list = []
+        for key in args_dict.keys():
+            query_list.append(key + ' = ?')
+            args_l.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY id ASC'
+
+    # 查询部分
+    if len(args_dict) > 0:
+        cursor.execute(sql_query, args_l)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                return redirect('/member_list')
+        else:
+            return redirect('/member_list')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+
+    return render_template('member_list.html', input=args_list, issues=page_item, page_info=page_info)
+
+@app.route('/member_list/<int:person_id>', methods=['GET'])
+@login_required
+def get_member_modify(person_id):
+    if current_user.is_admin == False:
+        return redirect('/index')
+    
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM person_info WHERE id = ?", (person_id,))
+    value = cursor.fetchall()
+
+    if len(value) == 0:
+        return redirect('/member_list')
+    
+    # TODO by lr
 
 @app.route('/logout')
 @login_required
