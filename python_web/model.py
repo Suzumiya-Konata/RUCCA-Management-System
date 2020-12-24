@@ -7,6 +7,7 @@ class User(UserMixin):
     def __init__(self, username):
         self.username = username
         self.id = int(self.get_id())
+        self.is_admin = self.check_admin()
 
     @property
     def password(self):
@@ -67,6 +68,20 @@ class User(UserMixin):
         conn.commit()
         conn.close()
         
+    def check_admin(self):
+        if self.id != 0:
+            conn = sqlite3.connect("../../RUCCA.db")
+            cursor = conn.cursor()
+            cursor.execute("SELECT job FROM person_info WHERE id = ?", (self.id,))
+            
+            value = int(cursor.fetchone()[0])
+
+            if value > 2:
+                return True
+            else:
+                return False
+        return False
+
 
     def get_id(self):
         """get username from sqlite
