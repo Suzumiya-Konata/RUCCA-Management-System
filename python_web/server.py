@@ -1108,7 +1108,8 @@ def get_activity_from_center():
     # 翻页保持url相对不变
     page_info = static_url(current_url, page_num, all_page_num, len(index_list))
 
-    return render_template('activity_center.html', datas=page_item, page_info=page_info)
+    identification = 1
+    return render_template('activity_center.html', datas=page_item, page_info=page_info,is_admin=identification)
 
 @app.route('/activity_center/<int:act_id>', methods=['GET'])
 @login_required
@@ -1161,6 +1162,7 @@ def activity_detail(act_id):
         status = 0
     else:
         status = 1
+
     return render_template('activity_detail.html', act=act_detail, is_display=is_display_modify,is_participate=status)
 
 @app.route('/activity_center/<int:act_id>', methods=['POST'])
