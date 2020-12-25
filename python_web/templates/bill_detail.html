@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill_Detail:NO.{{ bill.id }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>账单详情：第{{ bill.id }}号</p>
+    </div>
+    <div class="section" style="float: left;">
+        <a href="/finance_center"><button type="submit" class="submit">返回财务中心</button></a>
+    </div>
+    {% if is_minister == 1 %}
+        <div class="section" style="float: right;">
+            <form action="/finance_center/{{ bill.id }}" method="POST">
+                <button type="submit" class="submit">删除账单</button>
+            </form>
+        </div>
+        <div class="section" style="float: right;">
+            <a href="/finance_center/modify/{{ bill.id }}"><button type="submit" class="submit">修改账单</button></a>
+        </div>
+    {% endif %}
+    <div class="section">
+        <table>
+            <tr>
+                <th>名称</th>
+                <th>值</th>
+            </tr>
+            <tr>
+                <td>账单id</td>
+                <td>{{ bill.id }}</td>
+            </tr>
+            <tr>
+                <td>负责人</td>
+                <td>{{ bill.responsible_person }}</td>
+            </tr>
+            <tr>
+                <td>金额</td>
+                <td>{{ bill.count }}</td>
+            </tr>
+            <tr>
+                <td>相关活动</td>
+                <td>{{ bill.rel_act }}</td>
+            </tr>
+            <tr>
+                <td>详情描述</td>
+                <td>{{ bill.description }}</td>
+            </tr>
+        </table>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>
