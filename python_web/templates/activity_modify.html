@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act_Detail:NO.{{ act.id }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>活动详情：{{ act.id }}号活动</p>
+    </div>
+    <div class="section" style="float: left;">
+        <a href="/activity_center/{{ act.id }}"><button type="submit" class="submit">取消编辑</button></a>
+    </div>
+    <form class="section" action="/activity_center/modify/{{ act.id }}" method="POST" id="modify">
+        <table>
+            <tr>
+                <td>活动id</td>
+                <td>{{ act.id }}</td>
+            </tr>
+            <tr>
+                <td>创建人</td>
+                <td>{{ act.hostname }}</td>
+            </tr>
+            <tr>
+                <td>活动名称</td>
+                <td><input type="text" name="name" value="{{ act.name}}"></td>
+            </tr>
+            <tr>
+                <td>开始日期</td>
+                <td><input type="date" name="date" value="{{ act.date }}"></td>
+            </tr>
+            <tr>
+                <td>活动地点</td>
+                <td><input type="text" name="location" value="{{ act.location }}"></td>
+            </tr>
+            <tr>
+                <td>活动描述</td>
+                <td><textarea name="description">{{ act.description }}</textarea></td>
+            </tr>
+        </table>
+    </div>
+    <div>
+        <button form="modify" type="submit" class="submit">保存编辑</button>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index</title>
+    <title>Index way={{ way }}</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Handlee" rel="stylesheet">
 </head>
@@ -11,88 +11,182 @@
     <div id="header" class="section">
         <p>{{ user.username }}的个人信息</p>
     </div>
-    <form action="/info_modify" method="POST" id="save_modify">
-        <div class="section">
-            <h1><span>基本信息</span></h1>
-            <table>
-                <tr>
-                    <th>姓名</th>
-                    <th>性别</th>
-                    <th>身份证号</th>
-                </tr>
-                <tr>
-                    <td class="selected">{{ user.name }}</td>
-                    {% if user.sex == 'M' %}
-                        <td class="selected">男</td>
-                    {% else %}
-                        <td class="selected">女</td>
-                    {% endif %}
-                    <td class="selected">{{ user.id_card_number }}</td>
-                </tr>
-                <p></p>
-                <p></p>
-            </table>
+    <div class="section" style="float: right;">
+        <table>
+            <div class="section" style="float: right;">
+            {% if way == 1 %}
+                <a href="/info_detail"><button class="submit" >取消</button></a>
+            {% elif way == 2 %}
+                <a href="/member_list/{{ user.id }}"><button class="submit" >取消</button></a>
+            {% endif %}
+            </div>
+        </table>
+    </div>
+    <div class="section">
+    {% if way == 1 %}
+        <form action="/info_modify" method="POST" id="save_modify">
+            <div class="section">
+                <h1><span>基本信息</span></h1>
+                <table>
+                    <tr>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>身份证号</th>
+                    </tr>
+                    <tr>
+                        <td class="selected">{{ user.name }}</td>
+                        {% if user.sex == 'M' %}
+                            <td class="selected">男</td>
+                        {% else %}
+                            <td class="selected">女</td>
+                        {% endif %}
+                        <td class="selected">{{ user.id_card_number }}</td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section">
+                <h1><span>职务信息</span></h1>
+                <table>
+                    <tr>
+                        <th>所属部门</th>
+                        <th>职务</th>
+                    </tr>
+                    <tr>
+                        <td class="selected">{{ user.department }}</td>
+                        <td class="selected">{{ user.job }}</td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section">
+                <h1><span>账号信息</span></h1>
+                <h1>(修改账号信息将登出)</h1>
+                <table>
+                    <tr>
+                        <th>用户名</th>
+                        <th>密码（仅在为空时不作修改）</th>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="username" value="{{ user.username }}"></td>
+                        <td><input type="password" name="password" value=""></td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section">
+                <h1><span>其他信息</span></h1>
+                <table>
+                    <tr>
+                        <th>联系方式</th>
+                        <th>个人描述</th>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="phone" value="{{ user.phone }}"></td>
+                        <td><input type="text" name="description" value="{{ user.description }}"></td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section">
+                <h1><span>请输入当前密码</span></h1>
+                <table>
+                    <tr>
+                        <td><input type="password" name="before_passwd" value=""></td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+        </form>
+        <div class="section" style="text-align: center;">
+            <button type="submit" class="submit" form="save_modify">确认</button>
         </div>
-        <div class="section">
-            <h1><span>职务信息</span></h1>
-            <table>
-                <tr>
-                    <th>所属部门</th>
-                    <th>职务</th>
-                </tr>
-                <tr>
-                    <td class="selected">{{ user.department }}</td>
-                    <td class="selected">{{ user.job }}</td>
-                </tr>
-                <p></p>
-                <p></p>
-            </table>
-        </div>
-        <div class="section">
-            <h1><span>账号信息</span></h1>
-            <h1>(修改账号信息将登出)</h1>
-            <table>
-                <tr>
-                    <th>用户名</th>
-                    <th>密码（仅在为空时不作修改）</th>
-                </tr>
-                <tr>
-                    <td><input type="text" name="username" value="{{ user.username }}"></td>
-                    <td><input type="password" name="password" value=""></td>
-                </tr>
-                <p></p>
-                <p></p>
-            </table>
-        </div>
-        <div class="section">
-            <h1><span>其他信息</span></h1>
-            <table>
-                <tr>
-                    <th>联系方式</th>
-                    <th>个人描述</th>
-                </tr>
-                <tr>
-                    <td><input type="text" name="phone" value="{{ user.phone }}"></td>
-                    <td><input type="text" name="description" value="{{ user.description }}"></td>
-                </tr>
-                <p></p>
-                <p></p>
-            </table>
-        </div>
-        <div class="section">
-            <h1><span>请输入当前密码</span></h1>
-            <table>
-                <tr>
-                    <td><input type="password" name="before_passwd" value=""></td>
-                </tr>
-                <p></p>
-                <p></p>
-            </table>
-        </div>
-    </form>
-    <div class="section" style="text-align: center;">
-        <button type="submit" class="submit" form="save_modify" >确认</button>
-        <a href="/info_detail"><button class="submit">取消</button></a>
+    {% elif way == 2 %}
+        <form action="/member_list/modify/{{ user.id }}" method="POST" id="save_modify">
+            <div class="section">
+                <h1><span>基本信息</span></h1>
+                <table>
+                    <tr>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>身份证号</th>
+                    </tr>
+                    <tr>
+                        <td class="selected">{{ user.name }}</td>
+                        {% if user.sex == 'M' %}
+                            <td class="selected">男</td>
+                        {% else %}
+                            <td class="selected">女</td>
+                        {% endif %}
+                        <td class="selected">{{ user.id_card_number }}</td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section">
+                <h1><span>职务信息</span></h1>
+                <table>
+                    <tr>
+                        <th>所属部门</th>
+                        <th>职务</th>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="department" value="{{ user.department }}"></td>
+                        {% if can_be_modify == 1 %}
+                            <td><input type="text" name="job" value="{{ user.job }}"></td>
+                        {% elif can_be_modify == 0 %}
+                            <td class="selected">{{ user.job }}</td>
+                        {% endif %}
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section">
+                <h1><span>账号信息</span></h1>
+                <table>
+                    <tr>
+                        <th>用户名</th>
+                        <th>密码（仅在为空时不作修改）</th>
+                    </tr>
+                    <tr>
+                        <td class="selected">{{ user.username }}</td>
+                        <td class="selected">********</td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section">
+                <h1><span>其他信息</span></h1>
+                <table>
+                    <tr>
+                        <th>联系方式</th>
+                        <th>个人描述</th>
+                    </tr>
+                    <tr>
+                        <td class="selected">{{ user.phone }}</td>
+                        <td class="selected">{{ user.description }}</td>
+                    </tr>
+                    <p></p>
+                    <p></p>
+                </table>
+            </div>
+            <div class="section" style="text-align: center;">
+                {% if can_be_modify == 1 %}
+                    <button type="submit" class="submit" form="save_modify" name="identification" value="other">确认</button>
+                {% elif can_be_modify == 0 %}
+                    <button type="submit" class="submit" form="save_modify" name="identification" value="minister">确认</button>
+                {% endif %}
+            </div>
+        </form>
+    {% endif %}
     </div>
     <div class="copyright">
         &copy; 2020 RUCCA. All rights reserved.
