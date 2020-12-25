@@ -74,14 +74,32 @@ class User(UserMixin):
             cursor = conn.cursor()
             cursor.execute("SELECT job FROM person_info WHERE id = ?", (self.id,))
             
-            value = int(cursor.fetchone()[0])
+            lev_dict = {'部员':1,'副部长':2,'部长':3,'副会长':4,'会长':5}
+            value = cursor.fetchone()[0]
 
-            if value > 2:
+            if value not in lev_dict:
+                return False
+            if lev_dict[value] > 2:
                 return True
             else:
                 return False
         return False
 
+    def check_minister(self):
+        if self.id != 0:
+            conn = sqlite3.connect("../../RUCCA.db")
+            cursor = conn.cursor()
+            cursor.execute("SELECT job FROM person_info WHERE id = ?", (self.id,))
+            
+            lev_dict = {'部员':1,'副部长':2,'部长':3,'副会长':4,'会长':5}
+            value = cursor.fetchone()[0]
+            if value not in lev_dict:
+                return False
+            if lev_dict[value] == 5:
+                return True
+            else:
+                return False
+        return False
 
     def get_id(self):
         """get username from sqlite

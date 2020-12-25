@@ -78,8 +78,18 @@
         </table>
     </div>
     <div class="section" style="text-align: center;">
-        <a href="/info_modify"><button class="submit">修改</button></a>
+    {% if identification == 1 %}
+        {% if way == 1 %}
+            <a href="/info_modify"><button class="submit">修改</button></a>
+        {% endif %}
+    {% elif identification == 2 %}
+        <a href="/member_list/modify/{{ user.id }}"><button class="submit">修改</button></a>
+    {% endif %}
+    {% if way == 1 %}
         <a href="/index"><button class="submit">返回</button></a>
+    {% elif way == 2 %}
+        <a href="/member_list"><button class="submit">返回</button></a>
+    {% endif %}
     </div>
     <div class="copyright">
         &copy; 2020 RUCCA. All rights reserved.

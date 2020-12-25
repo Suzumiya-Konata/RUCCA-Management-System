@@ -58,10 +58,8 @@ cursor.execute('''
 ''')
 """
 # 获取表中的信息
-cursor.execute("pragma table_info(person_info)")
+cursor.execute("UPDATE person_info SET job = ? WHERE username = ?",('部长','senpai',))
 value = cursor.fetchall()
-
 print(value)
-
 conn.commit()
 conn.close()

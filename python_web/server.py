@@ -19,6 +19,8 @@ login_manager.session_protection = 'strong'
 login_manager.login_view = 'login'
 login_manager.init_app(app=app)
 
+lev_dict = {'部员':1,'副部长':2,'部长':3,'副会长':4,'会长':5}
+
 # 这个callback函数用于reload User object，根据session中存储的user id
 @login_manager.user_loader
 def load_user(user_id):
@@ -69,7 +71,7 @@ def index_page():
     }
     conn.commit()
     conn.close()
-    return render_template("index.html", user=user_dict, is_admin=current_user.is_admin)
+    return render_template("index.html", user=user_dict, is_admin=current_user.check_admin())
 
 @app.route('/info_detail', methods=['GET'])
 @login_required
@@ -83,6 +85,7 @@ def get_info_detail():
     ''', (current_user.id,))
     value = cursor.fetchone()
     user_dict = {
+        'id': value[0],
         'username': value[1],
         'password_hash': value[2],
         'name': value[3],
@@ -95,7 +98,7 @@ def get_info_detail():
     }
     conn.commit()
     conn.close()
-    return render_template("info_detail.html", user=user_dict)
+    return render_template("info_detail.html", user=user_dict, identification=1, way=1)
 
 @app.route('/info_modify', methods=['GET'])
 @login_required
@@ -109,6 +112,7 @@ def modify_info_detail():
     ''', (current_user.id,))
     value = cursor.fetchone()
     user_dict = {
+        'id': value[0],
         'username': value[1],
         'password_hash': value[2],
         'name': value[3],
@@ -121,7 +125,7 @@ def modify_info_detail():
     }
     conn.commit()
     conn.close()
-    return render_template("info_modify.html", user=user_dict)
+    return render_template("info_modify.html", user=user_dict, way=1)
 
 @app.route('/info_modify', methods=['POST'])
 @login_required
@@ -226,7 +230,7 @@ def modifying_info_detail():
 @app.route('/member_list', methods=['GET'])
 @login_required
 def get_member_list():
-    if current_user.is_admin == False:
+    if current_user.check_admin() == False:
         redirect('/index')
     
     # 处理url，重定向至正确的最简url
@@ -312,8 +316,8 @@ def get_member_list():
 
 @app.route('/member_list/<int:person_id>', methods=['GET'])
 @login_required
-def get_member_modify(person_id):
-    if current_user.is_admin == False:
+def get_member_detail(person_id):
+    if current_user.check_admin() == False:
         return redirect('/index')
     
     conn = sqlite3.connect('../../RUCCA.db')
@@ -323,9 +327,108 @@ def get_member_modify(person_id):
     value = cursor.fetchall()
 
     if len(value) == 0:
+        conn.commit()
+        conn.close()
         return redirect('/member_list')
     
-    # TODO by lr
+    cursor.execute('''
+        SELECT *
+        FROM person_info
+        WHERE id = ?
+    ''', (person_id,))
+    value = cursor.fetchone()
+    user_dict = {
+        'id': value[0],
+        'username': value[1],
+        'password_hash': value[2],
+        'name': value[3],
+        'id_card_number': value[4],
+        'sex': value[5],
+        'phone': value[6],
+        'department': value[7],
+        'job': value[8],
+        'description': value[9]
+    }
+    job = cursor.execute(
+        '''
+        SELECT job
+        FROM person_info
+        WHERE id = ?
+        ''',(current_user.id,)
+    ).fetchone()[0]
+    identify = 0
+    if lev_dict[job] == 5:
+        identify = 2
+    conn.commit()
+    conn.close()
+    return render_template("info_detail.html", user=user_dict, identification=identify, way=2)
+
+@app.route('/member_list/modify/<int:person_id>', methods=['GET'])
+@login_required
+def edit_member_detail(person_id):
+    print(current_user.id,current_user.check_admin(),current_user.check_minister())
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/member_list')
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT *
+        FROM person_info
+        WHERE id = ?
+    ''', (person_id,))
+    value = cursor.fetchone()
+    user_dict = {
+        'id': value[0],
+        'username': value[1],
+        'password_hash': value[2],
+        'name': value[3],
+        'id_card_number': value[4],
+        'sex': value[5],
+        'phone': value[6],
+        'department': value[7],
+        'job': value[8],
+        'description': value[9]
+    }
+    user = User(user_dict['username'])
+    modify = 1
+    if user.check_minister():
+        modify = 0
+    conn.commit()
+    conn.close()
+    return render_template("info_modify.html", user=user_dict, way=2, can_be_modify=modify)
+
+@app.route('/member_list/modify/<int:person_id>', methods=['POST'])
+@login_required
+def modify_member_detail(person_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/member_list')
+    conn = sqlite3.connect("../../RUCCA.db")
+    cursor = conn.cursor()
+    if(request.form['identification']=='other'):
+        if(request.form['job']=='会长'):
+            cursor.execute(
+                '''
+                UPDATE person_info SET job = ? WHERE id = ?
+                ''',('部员',current_user.id,)
+            )
+        cursor.execute(
+            '''
+            UPDATE person_info SET department = ?, job = ? WHERE id = ?
+            ''',(request.form['department'],request.form['job'],person_id,)
+        )
+    else:
+        cursor.execute(
+            '''
+            UPDATE person_info SET department = ? WHERE id = ?
+            ''',(request.form['department'],person_id,)
+        )
+    conn.commit()
+    conn.close()
+    return redirect('/member_list/'+str(person_id))
 
 @app.route('/logout')
 @login_required
@@ -353,6 +456,7 @@ def signup():
     value = cursor.fetchall()
 
     # 不在允许注册的学号表之中，不允许注册
+    print(len(value))
     if len(value) == 0 or value[0][0] == '1':
         return '''
         <script>
@@ -381,9 +485,9 @@ def signup():
     # 若允许注册/用户名没注册过，则准许注册，将账号数据插入数据库中
     password = request.form.get('password')
     cursor.execute('''
-        INSERT INTO person_info(username, password_hash)
-        VALUES(?,?)
-    ''', (username, generate_password_hash(password)))
+        INSERT INTO person_info(username, password_hash,job)
+        VALUES(?,?,?)
+    ''', (username, generate_password_hash(password),'部员',))
     cursor.execute('''
         UPDATE allowed_signup
         SET has_signup = 1
@@ -525,7 +629,6 @@ def get_issue_from_center():
 
     # 翻页保持url相对不变
     page_info = static_url(current_url, page_num, all_page_num, len(index_list))
-
     return render_template('issue_center.html', issues=page_item, page_info=page_info)
 
 @app.route('/issue_center/<int:issue_id>', methods=['GET'])
@@ -568,7 +671,7 @@ def get_issue_detail(issue_id):
     conn.close()
 
     is_display_modify = 0
-    if host_id == current_user.id:
+    if (host_id == current_user.id) or current_user.check_admin():
         is_display_modify = 1
 
     issue_dict = {
@@ -600,7 +703,7 @@ def delete_issue(issue_id):
 
     # 判断是否是host，只有是host才继续进行删除，否则跳回issue_center
     host_id = int(value[1])
-    if host_id != current_user.id:
+    if (host_id != current_user.id) and (current_user.check_admin() == False):
         return redirect('/issue_center')
 
     cursor.execute('''
@@ -624,20 +727,25 @@ def modify_issue_detail(issue_id):
 
     # 判断url中的id是否在合法范围内，不合法则返回事务中心
     if issue_id < 1 or issue_id > max_id:
+        conn.commit()
+        conn.close()
         return redirect('/issue_center')
 
     cursor.execute("SELECT * FROM issue WHERE id = ?", (issue_id,))
     value = cursor.fetchone()
     if value is None:
+        conn.commit()
+        conn.close()
         return redirect('/issue_center')
     
     # TO 林润：
     # 这里没必要再查询一次了
     # 如果上面那个value是None的话已经返回了，那么此时的value中已经包含了当前issue的所有信息
-    # 如果身份为host允许修改
-    if(int(value[1]) != current_user.id):
+    # 如果身份为host或管理员允许修改
+    if(int(value[1]) != current_user.id) and (current_user.check_admin() == False):
+        conn.commit()
+        conn.close()
         return redirect('/issue_center')
-    # 如果身份不为host(可能需要添加对管理员允许),强制返回事务中心
 
 
     value_list = list(value)
@@ -673,6 +781,14 @@ def modify_issue_detail(issue_id):
 def modify_detail(issue_id):
     conn = sqlite3.connect("../../RUCCA.db")
     cursor = conn.cursor()
+    #身份验证为host或admin才可以修改
+    cursor.execute("SELECT * FROM issue WHERE id = ?", (issue_id,))
+    value = cursor.fetchone()
+    if(int(value[1]) != current_user.id) and (current_user.check_admin() == False):
+        conn.commit()
+        conn.close()
+        return redirect('/issue_center')
+
     if(request.form['is_finished']=='true'):
         is_finished = 1
     else:
@@ -909,7 +1025,7 @@ def get_data_detail(data_id):
     conn.close()
 
     is_display_modify = 0
-    if host_id == current_user.id:
+    if (host_id == current_user.id) or (current_user.check_admin() == True):
         is_display_modify = 1
 
     data_dict = {
@@ -932,16 +1048,22 @@ def delete_maintenance_data(data_id):
 
     # 判断url中的id是否在合法，不合法则返回maintenance_center
     if data_id < 1 or data_id > max_id:
+        conn.commit()
+        conn.close()
         return redirect('/maintenance_center')
 
     cursor.execute("SELECT * FROM maintenance_data WHERE id = ?", (data_id,))
     value = cursor.fetchone()
     if value is None:
+        conn.commit()
+        conn.close()
         return redirect('/maintenance_center')
 
     # 判断是否是host，只有是host才继续进行删除，否则跳回maintenance_center
     host_id = int(value[1])
-    if host_id != current_user.id:
+    if (host_id != current_user.id) and (current_user.check_admin() == False):
+        conn.commit()
+        conn.close()
         return redirect('/maintenance_center')
 
     cursor.execute('''
@@ -965,16 +1087,18 @@ def edit_maintenence(data_id):
 
     # 判断url中的id是否在合法，不合法则返回maintenance_center
     if data_id < 1 or data_id > max_id:
+        conn.commit()
+        conn.close()
         return redirect('/maintenance_center')
 
     cursor.execute("SELECT * FROM maintenance_data WHERE id = ?", (data_id,))
     value = cursor.fetchone()
-    if value is None:
+    if (value is None)or((int(value[1])!=current_user.id)and(current_user.check_admin()==False)):
+        conn.commit()
+        conn.close()
         return redirect('/maintenance_center')
+    # 判断是否是host或admin，只有是host才继续进行编辑，否则跳回maintenance_center
 
-    # 判断是否是host，只有是host才继续进行编辑，否则跳回maintenance_center
-
-    host_id = int(value[1])
     
     value_list = list(value)
     cursor.execute('''
@@ -991,10 +1115,6 @@ def edit_maintenence(data_id):
     conn.commit()
     conn.close()
 
-    is_display_modify = 0
-    if host_id == current_user.id:
-        is_display_modify = 1
-
     data_dict = {
         'id': value_list[0],
         'hostname': value_list[1],
@@ -1002,7 +1122,7 @@ def edit_maintenence(data_id):
         'model': value_list[3],
         'description': value_list[4]
     }
-    return render_template('maintenance_modify.html', data=data_dict, is_display=is_display_modify)
+    return render_template('maintenance_modify.html', data=data_dict)
 
 @app.route('/maintenance_center/modify/<int:data_id>', methods=['POST'])
 @login_required
@@ -1015,14 +1135,18 @@ def modify_maintenence(data_id):
 
     # 判断url中的id是否在合法，不合法则返回maintenance_center
     if data_id < 1 or data_id > max_id:
+        conn.commit()
+        conn.close()
         return redirect('/maintenance_center')
 
     cursor.execute("SELECT * FROM maintenance_data WHERE id = ?", (data_id,))
     value = cursor.fetchone()
-    if value is None:
+    if (value is None)or((int(value[1])!=current_user.id)and(current_user.check_admin()==False)):
+        conn.commit()
+        conn.close()
         return redirect('/maintenance_center')
 
-    # 判断是否是host，只有是host才继续进行编辑，否则跳回maintenance_center
+    # 判断是否是host或admin，只有是host才继续进行编辑，否则跳回maintenance_center
     cursor.execute(
         '''
         UPDATE maintenance_data
@@ -1214,7 +1338,8 @@ def get_activity_from_center():
     # 翻页保持url相对不变
     page_info = static_url(current_url, page_num, all_page_num, len(index_list))
 
-    return render_template('activity_center.html', datas=page_item, page_info=page_info)
+    identification = current_user.check_admin()
+    return render_template('activity_center.html', datas=page_item, page_info=page_info,is_admin=identification)
 
 @app.route('/activity_center/<int:act_id>', methods=['GET'])
 @login_required
@@ -1230,20 +1355,21 @@ def activity_detail(act_id):
     )
     values = cursor.fetchone()
     host_id = values[5]
-    cursor.execute(
+    hostname = cursor.execute(
         '''
         SELECT username
         FROM person_info
         WHERE id = ?
         ''',(host_id,)
-    )
+    ).fetchone()[0]
+    
     act_detail = {
         'id':values[0],
         'name':values[1],
         'date':values[2],
         'location':values[3],
         'description':values[4],
-        'hostname':host_id
+        'hostname':hostname
     }
     #print(act_detail)
 
@@ -1258,15 +1384,15 @@ def activity_detail(act_id):
     conn.commit()
     conn.close()
 
-    if host_id==current_user.id:
+    is_display_modify = 0
+    if (host_id == current_user.id) or (current_user.check_admin() == True):
         is_display_modify = 1
-    else:
-        is_display_modify = 0
     
     if (not is_participate):
         status = 0
     else:
         status = 1
+
     return render_template('activity_detail.html', act=act_detail, is_display=is_display_modify,is_participate=status)
 
 @app.route('/activity_center/<int:act_id>', methods=['POST'])
@@ -1327,9 +1453,90 @@ def delete_activity(act_id):
         conn.close()
         return redirect('/activity_center/'+str(act_id))
 
+@app.route('/activity_center/modify/<int:act_id>', methods=['GET'])
+@login_required
+def edit_activity(act_id):
+    if current_user.check_admin() == False:
+        return redirect('/activity_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        SELECT *
+        FROM activity
+        WHERE id = ?
+        ''',(act_id,)
+    )
+    values = cursor.fetchone()
+    host_id = values[5]
+    hostname = cursor.execute(
+        '''
+        SELECT username
+        FROM person_info
+        WHERE id = ?
+        ''',(host_id,)
+    ).fetchone()[0]
+    
+    act_detail = {
+        'id':values[0],
+        'name':values[1],
+        'date':values[2],
+        'location':values[3],
+        'description':values[4],
+        'hostname':hostname
+    }
+    #print(act_detail)
+
+    cursor.execute(
+        '''
+        SELECT *
+        FROM activity_participate
+        WHERE person_id = ? AND activity_id = ?
+        ''',(current_user.id,act_id,)
+    )
+    is_participate = cursor.fetchone()
+    conn.commit()
+    conn.close()
+
+    is_display_modify = 0
+    if (host_id == current_user.id) or (current_user.check_admin() == True):
+        is_display_modify = 1
+    
+    if (not is_participate):
+        status = 0
+    else:
+        status = 1
+
+    return render_template('activity_modify.html', act=act_detail, is_display=is_display_modify,is_participate=status)
+
+@app.route('/activity_center/modify/<int:act_id>', methods=['POST'])
+@login_required
+def save_activity(act_id):
+    if(current_user.check_admin()==False):
+        redirect('/activity_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        '''
+        UPDATE activity
+        SET
+            name = ?,
+            date = ?,
+            location = ?,
+            description = ?
+        WHERE id = ?
+        ''',(request.form['name'],request.form['date'],request.form['location'],request.form['description'],act_id,)
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect('/activity_center/'+str(act_id))
+
 @app.route('/activity_center/create',methods=['GET'])
 @login_required
 def edit_new_activity():
+    if current_user.check_admin() == False:
+        return redirect('/activity_center')
     conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
     cursor.execute(
@@ -1350,6 +1557,8 @@ def edit_new_activity():
 @app.route('/activity_center/create',methods=['POST'])
 @login_required
 def create_new_activity():
+    if current_user.check_admin() == False:
+        return redirect('/activity_center')
     conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
     cursor.execute(
