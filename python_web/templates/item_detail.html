@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item_Detail:NO.{{ item.id }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>财物详情：第{{ item.id }}号</p>
+    </div>
+    <div class="section" style="float: left;">
+        <a href="/item_center"><button type="submit" class="submit">返回财物中心</button></a>
+    </div>
+    {% if is_minister == 1 %}
+        <div class="section" style="float: right;">
+            <form action="/item_center/{{ item.id }}" method="POST">
+                <button type="submit" class="submit">弃用财物</button>
+            </form>
+        </div>
+        <div class="section" style="float: right;">
+            <a href="/item_center/modify/{{ item.id }}"><button type="submit" class="submit">修改财物信息</button></a>
+        </div>
+    {% endif %}
+    <div class="section">
+        <table>
+            <tr>
+                <th>名称</th>
+                <th>值</th>
+            </tr>
+            <tr>
+                <td>财物id</td>
+                <td>{{ item.id }}</td>
+            </tr>
+            <tr>
+                <td>财物名称</td>
+                <td>{{ item.name }}</td>
+            </tr>
+            <tr>
+                <td>负责人</td>
+                <td>{{ item.rep_person }}</td>
+            </tr>
+            <tr>
+                <td>收录日期</td>
+                <td>{{ item.get_date }}</td>
+            </tr>
+            <tr>
+                <td>弃用日期</td>
+                <td>{{ item.abandon_date }}</td>
+            </tr>
+            <tr>
+                <td>相关账单</td>
+                <td>{{ item.rel_bill }}</td>
+            </tr>
+            <tr>
+                <td>详情描述</td>
+                <td>{{ item.description }}</td>
+            </tr>
+        </table>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

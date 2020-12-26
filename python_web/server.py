@@ -1890,7 +1890,7 @@ def get_finance_data_from_center():
 
     # 翻页保持url相对不变
     page_info = static_url(current_url, page_num, all_page_num, len(index_list))
-    args_list=['账单号','金额','负责人','详情描述','所属活动']
+    #args_list=['账单号','金额','负责人','详情描述','所属活动']
     return render_template('finance_center.html', input=args_list, bills=page_item, page_info=page_info, account_re=sum)
 
 @app.route('/finance_center/create', methods=['GET'])
@@ -2093,9 +2093,9 @@ def get_item_info_from_center():
     if len(index_list) == 0 or len(index_list) == len(new_index_list):
         pass
     elif len(new_index_list) == 0:
-        return redirect('/finance_center')
+        return redirect('/item_center')
     else:
-        return redirect('/finance_center?' + '&'.join(new_index_list))
+        return redirect('/item_center?' + '&'.join(new_index_list))
 
     conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
@@ -2171,7 +2171,7 @@ def get_item_info_from_center():
 
     # 翻页保持url相对不变
     page_info = static_url(current_url, page_num, all_page_num, len(index_list))
-    args_list=['财物编号','财物名称','财物状态','财物描述','收录时间','弃用时间','负责人','所属账单编号']
+    #args_list=['财物编号','财物名称','财物状态','财物描述','收录时间','弃用时间','负责人','所属账单编号']
     return render_template('item_center.html', input=args_list, items=page_item, page_info=page_info, account_re=count)
 
 @app.route('/item_center/create', methods=['GET'])
@@ -2251,7 +2251,156 @@ def item_detail(item_id):
         conn.close()
         return '<script>alert("Invalid url!");window.location.href = "/item_center"</script>'
     else:
+        item_dict = {
+            'id': values[0],
+            'name': values[1],
+            'status': values[2],
+            'description': values[3],
+            'get_date': values[4],
+            'abandon_date': values[5],
+            'rep_person': values[6],
+            'rel_bill': values[7]
+        }
+        rep_person = cursor.execute('SELECT username From person_info WHERE id = ?',(item_dict['rep_person'],)).fetchone()[0]
+        item_dict['rep_person'] = rep_person
+        conn.commit()
+        conn.close()
+        identification = 0
+        if current_user.check_minister() == True:
+            identification = 1
+        return render_template('item_detail.html', item=item_dict, is_minister=identification)
+
+@app.route('/item_center/<int:item_id>', methods=['POST'])
+@login_required
+def item_abandon(item_id):
+    if current_user.check_admin() == False:
         return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/item_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM item WHERE id = ?',(item_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/item_center"</script>'
+    else:
+        cursor.execute('SELECT status FROM item WHERE id = ?',(item_id,))
+        values = cursor.fetchone()[0]
+        if(values==2):
+            conn.commit()
+            conn.close()
+            return redirect('/item_center/'+str(item_id))
+        import time
+        localtime = time.localtime(time.time())
+        date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
+        cursor.execute('UPDATE item SET status = 2 , abandon_date = ? WHERE id = ?',(date,item_id,))
+        conn.commit()
+        conn.close()
+        return redirect('/item_center/'+str(item_id))
+
+@app.route('/item_center/modify/<int:item_id>', methods=['GET'])
+@login_required
+def item_edit(item_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/item_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM item WHERE id = ?',(item_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/item_center"</script>'
+    else:
+        item_dict = {
+            'id': values[0],
+            'name': values[1],
+            'status': values[2],
+            'description': values[3],
+            'get_date': values[4],
+            'abandon_date': values[5],
+            'rep_person': values[6],
+            'rel_bill': values[7]
+        }
+        rep_person = cursor.execute('SELECT username From person_info WHERE id = ?',(item_dict['rep_person'],)).fetchone()[0]
+        item_dict['rep_person'] = rep_person
+        conn.commit()
+        conn.close()
+        identification = 0
+        if current_user.check_minister() == True:
+            identification = 1
+        return render_template('item_modify.html', item=item_dict, is_minister=identification)
+
+@app.route('/item_center/modify/<int:item_id>', methods=['POST'])
+@login_required
+def item_modify(item_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/item_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM item WHERE id = ?',(item_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/item_center"</script>'
+    else:
+        cursor.execute('SELECT id FROM person_info WHERE username = ?',(request.form['rep_person'],))
+        values = cursor.fetchone()
+        if (type(values)!=type(None)):
+            responsible_person_id = values[0]
+        else:
+            conn.commit()
+            conn.close()
+            return '''
+            <script>
+                alert("财物负责人不存在..");
+                window.location.href = "/finance_center";
+            </script>
+            '''   
+        cursor.execute(
+            '''
+            UPDATE item
+            SET
+                name = ?,
+                status = ?,
+                get_date = ?,
+                abandon_date = ?,
+                rel_bill = ?,
+                rep_person = ?,
+                description = ?
+            WHERE id = ?
+            ''',(
+                request.form['name'],
+                request.form['status'],
+                request.form['get_date'],
+                request.form['abandon_date'],
+                request.form['rel_bill'],
+                responsible_person_id,
+                request.form['description'],
+                item_id
+            )
+        )
+        present_status = cursor.execute('SELECT status FROM item WHERE id = ?',(item_id,)).fetchone()[0]
+        if(present_status==1):
+            cursor.execute("UPDATE item SET abandon_date = null WHERE id = ?",(item_id,))
+        elif(present_status==2):
+            import time
+            localtime = time.localtime(time.time())
+            date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
+            if(request.form['abandon_date']>date):
+                cursor.execute('UPDATE item SET abandon_date = ? WHERE id = ?',(date,item_id,))
+        if(request.form['get_date']>date):
+            cursor.execute('UPDATE item SET get_date = ? WHERE id = ?',(date,item_id,))
+        conn.commit()
+        conn.close()
+        return redirect('/item_center/'+str(item_id))
 
 if __name__ == '__main__':
     app.run(debug=True)
