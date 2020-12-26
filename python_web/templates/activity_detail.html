@@ -23,6 +23,12 @@
         <div class="section" style="float: right;">
             <a href="/activity_center/modify/{{ act.id }}"><button type="submit" class="submit">修改活动详情</button></a>
         </div>
+        <div class="section" style="float: right;">
+            <a href="/activity_center/{{ act.id }}/participate"><button class="submit">查看活动参加情况</button></a>
+        </div>
+        <div class="section" style="float: right;">
+            <a href="/activity_center/{{ act.id }}/reply"><button class="submit">查看反馈情况</button></a>
+        </div>
     {% endif %}
     <div class="section">
         <table>

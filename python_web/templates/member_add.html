@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add_Member</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>为协会添加成员</p>
+    </div>
+    <div class="section">
+        <form action="/signup_management/create" method="POST" id="new_member">
+            <table>
+                <tr>
+                    <th>学号</th>
+                    <td><input type="text" name="student_id" maxlength="10"></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+    <div class="section">
+        <a href="/signup_management"><button class="submit" style="float: left;">放弃添加</button></a>
+        <button type="submit" class="submit" form="new_member" style="float: right;">添加成员</button>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

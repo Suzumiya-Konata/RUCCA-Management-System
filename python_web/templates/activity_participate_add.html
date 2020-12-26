@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity_Participate_Add</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Handlee" rel="stylesheet">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>新增活动参与情况</p>
+    </div>
+    <div class="section">
+        <table>
+            <div class="section" style="float: left;">
+                <a href="/activity_center/{{ info_dict.act_id }}/participate"><button type="submit" class="submit">返回活动参与详情</button></a>
+            </div>
+        </table>
+    </div>
+    <form action="/activity_center/{{ info_dict.act_id }}/add" method="POST" id="activity_participate_add">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>名称</th>
+                    <th>值</th>
+                </tr>
+                <tr>
+                    <td>活动id</td>
+                    <td>{{ info_dict.act_id }}</td>
+                </tr>
+                <tr>
+                    <td>参与人id</td>
+                    <td><input type="text" name="person_id"></td>
+                </tr>
+                <tr>
+                    <td>活动内容描述</td>
+                    <td><input type="text" name="content"></td>
+                </tr>
+            </table>
+        </div>
+    </form>
+    <div class="section" style="text-align: center;">
+        <button type="submit" class="submit" form="activity_participate_add" >确认</button>
+        <button type="reset" class="submit" form="activity_participate_add">重置</button>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>
