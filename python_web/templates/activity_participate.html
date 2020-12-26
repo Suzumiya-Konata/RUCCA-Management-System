@@ -3,46 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% if is_memberls %}
-        <title>Member_list</title>
-    {% else %}
-        <title>Signup_Management</title>
-    {% endif %}
+    <title>Activity_Participate:NO.{{ act_id }}</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
 </head>
 <body>
     <div id="header" class="section">
-        {% if is_memberls %}
-            <p>成员列表</p>
-        {% else %}
-            <p>注册成员列表</p>
-        {% endif %}
+        <p>第{{ act_id }}号活动参加情况</p>
     </div>
     <div class="section">
         <table>
-            <a href="/index"><button class="submit" style="float: left;">返回主界面</button></a>
-            {% if is_memberls == False %}
-                <a href="/signup_management/create"><button class="submit" style="float: right;">添加注册成员</button></a>
-            {% endif %}
+            <a href="/activity_center/{{ act_id }}"><button class="submit" style="float: left;">返回活动详情</button></a>
+            <a href="/activity_center/{{ act_id }}/add"><button class="submit" style="float: right;">添加活动参加情况</button></a>
             <p></p>
             <p></p>
         </table>
     </div>
     <div class="section">
-        {% if is_memberls %}
-            <form action="/member_list" method="GET" id="search" style="text-align: center;">
-                {% for arg in input %}
-                    <p>{{ arg }}:<input type="text" name="{{ arg }}" style="text-align: center;"></p>
-                {% endfor %}
-            </form>
-        {% else %}
-            <form action="/signup_management" method="GET" id="search" style="text-align: center;">
-                {% for arg in input %}
-                    <p>{{ arg }}:<input type="text" name="{{ arg }}" style="text-align: center;"></p>
-                {% endfor %}
-            </form>
-        {% endif %}
+        <form action="/activity_center/{{ act_id }}/participate" method="GET" id="search">
+            <p>用户id：<input type="text" name="id"></p>
+            <p>用户名：<input type="text" name="name"></p>
+            <p>所属部门：<input type="text" name="department"></p>
+            <p>职务：<input type="text" name="job"></p>
+            <p>活动内容：<input type="text" name="content"></p>
+        </form>
     </div>
     <div class="section" style="text-align: center;">
         <button type="submit" class="submit" form="search">查询</button>
@@ -51,21 +35,19 @@
     <div class="section">
         <table>
             <tr>
-                {% for arg in input %}
-                    <th>{{ arg }}</th>
-                {% endfor %}
-                {% if is_memberls %}
-                    <th>前往修改</th>
-                {% endif %}
+                <th>用户id</th>
+                <th>用户名</th>
+                <th>所属部门</th>
+                <th>职务</th>
+                <th>活动内容</th>
+                <th>链接</th>
             </tr>
-            {% for issue in issues %}
+            {% for data in datas %}
                 <tr>
-                    {% for i in issue %}
+                    {% for i in data %}
                     <td>{{ i }}</td>
                     {% endfor %}
-                    {% if is_memberls %}
-                        <td><a href="/member_list/{{ issue[0] }}">前往</a></td>
-                    {% endif %}
+                    <td><a href="/activity_center/{{ act_id }}/participate/{{ data[0] }}">前往修改</a> <a href="/activity_center/{{ act_id }}/participate/delete?id={{ data[0] }}">删除</a></td>
                 </tr>
             {% endfor %}
         </table>
@@ -86,3 +68,4 @@
         &copy; 2020 RUCCA. All rights reserved.
     </div>
 </body>
+</html>

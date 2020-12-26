@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动反馈</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>活动反馈</p>
+        <p>活动号：{{ act_id }}</p>
+    </div>
+    <div class="section">
+        <table>
+            <a href="/activity_center/{{ act_id }}"><button class="submit" style="float: left;">返回活动详情</button></a>
+        </table>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <th>反馈id</th>
+                <th>反馈人姓名</th>
+                <th>联系方式</th>
+                <th>反馈内容</th>
+                <th>后续建议</th>
+            </tr>
+            {% for data in datas %}
+                <tr>
+                    {% for i in data %}
+                    <td>{{ i }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <td><a href={{ page_info.first_page_url }}>首页</a></td>
+                <td><a href={{ page_info.prev_page_url }}>上一页</a></td>
+                <td><a href={{ page_info.next_page_url }}>下一页</a></td>
+                <td><a href={{ page_info.end_page_url }}>末页</a></td>
+            </tr>
+        </table>
+        <p>第{{ page_info.cur_page_num }}页，共{{ page_info.max_page_num }}页。</p>
+        <form action="/activity_center/{{ act_id }}/reply" method="GET">
+            <p>前往<input type="text" name="page" form="search">页<button type="submit" class="submit">GO</button></p>
+        </form>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>

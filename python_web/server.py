@@ -312,7 +312,7 @@ def get_member_list():
     # 翻页保持url相对不变
     page_info = static_url(current_url, page_num, all_page_num, len(index_list))
 
-    return render_template('member_list.html', input=args_list, issues=page_item, page_info=page_info)
+    return render_template('member_list.html', input=args_list, issues=page_item, page_info=page_info, is_memberls=True)
 
 @app.route('/member_list/<int:person_id>', methods=['GET'])
 @login_required
@@ -373,7 +373,6 @@ def get_member_detail(person_id):
 @app.route('/member_list/modify/<int:person_id>', methods=['GET'])
 @login_required
 def edit_member_detail(person_id):
-    print(current_user.id,current_user.check_admin(),current_user.check_minister())
     if current_user.check_admin() == False:
         return redirect('/index')
     if current_user.check_minister() == False:
@@ -451,6 +450,124 @@ def modify_member_detail(person_id):
     conn.close()
     return redirect('/member_list/'+str(person_id))
 
+@app.route('/signup_management', methods=['GET'])
+@login_required
+def get_signup_list():
+    # 若不是管理员，则返回index页
+    if current_user.check_admin() == False:
+        return redirect('/index')
+
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/signup_management')
+    else:
+        return redirect('signup_management?' + '&'.join(new_index_list))
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    args = ['student_id', 'relate_account']
+    args_dict = {}
+    for arg in args:
+        if request.args.get(arg) is not None:
+            args_dict[arg] = request.args.get(arg)
+
+    sql_query = "SELECT student_id,relate_account FROM signup_token "
+    args_l = []
+    if len(args_dict) > 0:
+        sql_query += 'WHERE '
+        query_list = []
+        for key in args_dict.keys():
+            query_list.append(key + ' = ?')
+            args_l.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY student_id DESC'
+
+    # 查询部分
+    if len(args_dict) > 0:
+        cursor.execute(sql_query, args_l)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                conn.commit()
+                conn.close()
+                return redirect('/member_list')
+        else:
+            conn.commit()
+            conn.close()
+            return redirect('/member_list')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+    return render_template('member_list.html', input=args, issues=page_item, page_info=page_info, is_memberls=False)
+
+@app.route('/signup_management/create', methods=['GET'])
+@login_required
+def signup_list_form():
+    # 若不是管理员，则返回index页
+    if current_user.check_admin() == False:
+        return redirect('/index')
+
+    return render_template('member_add.html')
+
+@app.route('/signup_management/create', methods=['POST'])
+@login_required
+def signup_list_append():
+    # 若不是管理员，则返回index页
+    if current_user.check_admin() == False:
+        return redirect('/index')
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    student_id = request.form.get('student_id')
+
+    cursor.execute("SELECT COUNT(*) FROM signup_token WHERE student_id = ?", (student_id, ))
+    count = cursor.fetchone()[0]
+
+    if count > 0:
+        conn.commit()
+        conn.close()
+        return redirect('/signup_management')
+    
+    cursor.execute("INSERT INTO signup_token VALUES(?, ?)", (student_id, 0, ))
+
+    conn.commit()
+    conn.close()
+    return redirect('/signup_management')
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -473,12 +590,12 @@ def signup():
 
     # 查询允许注册的学号表，查看输入的学号是否在其中
     studentid = request.form.get('stuid')
-    cursor.execute('SELECT has_signup FROM allowed_signup WHERE studentid = ?', (studentid,))
+    cursor.execute('SELECT relate_account FROM signup_token WHERE student_id = ?', (studentid,))
     value = cursor.fetchall()
 
-    # 不在允许注册的学号表之中，不允许注册
+    # 不在允许注册的学号表之中，或已经注册过，则不允许注册
     print(len(value))
-    if len(value) == 0 or value[0][0] == '1':
+    if len(value) == 0 or int(value[0][0]) > 0:
         return '''
         <script>
             alert("您没有注册权限，即将返回主页..");
@@ -509,11 +626,13 @@ def signup():
         INSERT INTO person_info(username, password_hash,job)
         VALUES(?,?,?)
     ''', (username, generate_password_hash(password),'部员',))
+    cursor.execute("SELECT id FROM person_info WHERE username = ?", (username, ))
+    account_id = cursor.fetchone()[0]
     cursor.execute('''
-        UPDATE allowed_signup
-        SET has_signup = 1
-        WHERE studentid = ?
-    ''', (studentid,))
+        UPDATE signup_token
+        SET relate_account = ?
+        WHERE student_id = ?
+    ''', (account_id, studentid,))
 
     conn.commit()
     conn.close()
@@ -1389,6 +1508,10 @@ def activity_detail(act_id):
         ''',(act_id,)
     )
     values = cursor.fetchone()
+
+    if values is None:
+        return redirect('/activity_center')
+
     host_id = values[5]
     hostname = cursor.execute(
         '''
@@ -1490,6 +1613,314 @@ def delete_activity(act_id):
         conn.commit()
         conn.close()
         return redirect('/activity_center/'+str(act_id))
+
+@app.route('/activity_center/<int:act_id>/participate', methods=['GET'])
+@login_required
+def get_activity_participate(act_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM activity WHERE id = ?", (act_id, ))
+    count = int(cursor.fetchone()[0])
+
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+    if current_user.check_admin() == False:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/{}'.format(act_id))
+
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/{}/participate'.format(act_id))
+    else:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/{}/participate?'.format(act_id) + '&'.join(new_index_list))
+
+    args_list = ['id', 'name', 'department', 'job', 'content']
+    args_dict = {}
+    for arg in args_list:
+        if request.args.get(arg) is not None:
+            args_dict[arg] = request.args.get(arg)
+    
+    sql_query = '''
+        SELECT person_info.id, person_info.name, person_info.department, person_info.job, activity_participate.content
+        FROM person_info, activity_participate
+        WHERE activity_participate.activity_id = ? AND person_info.id = activity_participate.person_id 
+    '''
+    args_l = [act_id]
+    if len(args_dict) > 0:
+        sql_query += 'AND '
+        query_list = []
+        for key in args_dict.keys():
+            if key != 'content':
+                query_list.append("person_info." + key + ' = ?')
+            else:
+                query_list.append("activity_participate." + key + ' = ?')
+            args_l.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY id DESC'
+
+    if len(args_list) > 0:
+        cursor.execute(sql_query, args_l)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                conn.commit()
+                conn.close()
+                return redirect('/activity_center/{}'.format(act_id))
+        else:
+            conn.commit()
+            conn.close()
+            return redirect('/activity_center/{}'.format(act_id))
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+    return render_template('activity_participate.html',act_id=act_id,datas=page_item,page_info=page_info)
+
+@app.route('/activity_center/<int:act_id>/participate/<int:person_id>', methods=['GET'])
+@login_required
+def modify_activity_participate_form(act_id, person_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM activity_participate WHERE activity_id = ? AND person_id = ?", (act_id, person_id, ))
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+    if current_user.check_admin() == False:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+
+    cursor.execute("SELECT name FROM activity WHERE id = ?", (act_id, ))
+    act_name = cursor.fetchone()[0]
+    cursor.execute("SELECT name FROM activity WHERE id = ?", (act_id, ))
+    person_name = cursor.fetchone()[0]
+
+    cursor.execute("SELECT content FROM activity_participate WHERE activity_id = ? AND person_id = ?", (act_id, person_id, ))
+    content = cursor.fetchone()[0]
+
+    conn.commit()
+    conn.close()
+
+    info_dict = {
+        'act_id':act_id,
+        'act_name':act_name,
+        'person_id':person_id,
+        'person_name':person_name,
+        'content':content
+    }
+
+    return render_template('activity_participate_modify.html', info_dict=info_dict)
+
+@app.route('/activity_center/<int:act_id>/participate/<int:person_id>', methods=['POST'])
+@login_required
+def modify_activity_participate(act_id, person_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM activity_participate WHERE activity_id = ? AND person_id = ?", (act_id, person_id, ))
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+    if current_user.check_admin() == False:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+
+    cursor.execute("UPDATE activity_participate SET content = ? WHERE activity_id = ? AND person_id = ?", (request.form.get('content'), act_id, person_id, ))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/activity_center/{}/participate'.format(act_id))
+
+@app.route('/activity_center/<int:act_id>/participate/delete', methods=['GET'])
+@login_required
+def remove_activity_participate(act_id):
+    if request.args.get('id') is None:
+        return redirect('/activity_center/{}'.format(act_id))
+    if current_user.check_admin() == False:
+        return redirect('/activity_center/{}'.format(act_id))
+    person_id = request.args.get('id')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM activity_participate WHERE activity_id = ? AND person_id = ?", (act_id, person_id, ))
+    count = cursor.fetchone()[0]
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/{}'.format(act_id))
+
+    cursor.execute("DELETE FROM activity_participate WHERE activity_id = ? AND person_id = ?", (act_id, person_id, ))
+    conn.commit()
+    conn.close()
+    return redirect('/activity_center/{}/participate'.format(act_id))
+
+@app.route('/activity_center/<int:act_id>/add', methods=['GET'])
+@login_required
+def get_activity_participate_form(act_id):
+    if current_user.check_admin() == False:
+        return redirect('/activity_center/{}'.format(act_id))
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM activity WHERE id = ?", (act_id, ))
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+
+    info_dict = {
+        'act_id': act_id
+    }
+
+    return render_template('activity_participate_add.html',info_dict=info_dict)
+
+@app.route('/activity_center/<int:act_id>/add', methods=['POST'])
+@login_required
+def post_activity_participate_form(act_id):
+    if current_user.check_admin() == False:
+        return redirect('/activity_center/{}'.format(act_id))
+    if request.form.get('person_id') is None:
+        return redirect('/activity_center/{}'.format(act_id))
+    person_id = request.form.get('person_id')
+    content = request.form.get('content')
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM activity WHERE id = ?", (act_id, ))
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+
+    cursor.execute("SELECT COUNT(*) FROM person_info WHERE id = ?", (person_id, ))
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/{}'.format(act_id))
+
+    cursor.execute("SELECT COUNT(*) FROM activity_participate WHERE activity_id = ? AND person_id = ?", (act_id, person_id, ))
+    count = cursor.fetchone()[0]
+
+    if count > 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/{}'.format(act_id))
+
+    cursor.execute("INSERT INTO activity_participate VALUES(?, ?, ?)", (act_id, person_id, content, ))
+    conn.commit()
+    conn.close()
+
+    return redirect('/activity_center/{}/participate'.format(act_id))
+
+@app.route('/activity_center/<int:act_id>/reply', methods=['GET'])
+@login_required
+def get_activity_reply(act_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM activity WHERE id = ?", (act_id, ))
+    count = int(cursor.fetchone()[0])
+
+    if count == 0:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center')
+    if current_user.check_admin() == False:
+        conn.commit()
+        conn.close()
+        return redirect('/activity_center/{}'.format(act_id))
+
+    cursor.execute("SELECT id, submitter, contact, content, suggestion FROM reply WHERE activity_id = ?", (act_id, ))
+    value = cursor.fetchall()
+
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                conn.commit()
+                conn.close()
+                return redirect('/activity_center/{}'.format(act_id))
+        else:
+            conn.commit()
+            conn.close()
+            return redirect('/activity_center/{}'.format(act_id))
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+
+    conn.commit()
+    conn.close()
+
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+    return render_template('activity_reply.html', act_id=act_id, datas=page_item, page_info=page_info)
 
 @app.route('/activity_center/modify/<int:act_id>', methods=['GET'])
 @login_required
@@ -2232,7 +2663,6 @@ def add_new_item():
             request.form['rel_bill'],
         )
     )
-    item_id = cursor.execute('SELECT COUNT(id) FROM item').fetchone()[0]
     conn.commit()
     conn.close()
     return redirect('/item_center')
