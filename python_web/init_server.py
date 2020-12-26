@@ -58,6 +58,61 @@ cursor.execute('''
 ''')
 
 # 获取表中的信息
+#cursor.execute('DROP TABLE bill')
+cursor.execute(
+    '''
+    CREATE TABLE bill(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        count INT,
+        responsible_person INT,
+        description VARCHAR(500),
+        activity_id INT,
+        FOREIGN KEY (activity_id)
+            REFERENCES activity(id),
+        FOREIGN KEY (responsible_person)
+            REFERENCES person_info(id)
+    )'''
+)
+cursor.execute(
+    '''
+    INSERT INTO bill
+    VALUES(1,50000,1,?,1)
+''',("fortest",))
+cursor.execute(
+    '''
+    SELECT * FROM bill 
+    '''
+)
+"""
+cursor.execute(
+    '''
+    CREATE TABLE item(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(20),
+        status INT,
+        description VARCHAR(500),
+        get_date DATE,
+        abandon_date DATE,
+        rep_person INT,
+        rel_bill INT,
+        FOREIGN KEY (rep_person)
+            REFERENCES person_info(id),
+        FOREIGN KEY (rel_bill)
+            REFERENCES bill(id)
+    )'''
+)
+cursor.execute(
+    '''
+    INSERT INTO item
+    VALUES(1,'UDisk',1,'fortest',?,?,1,2)
+''',(None,None,))
+cursor.execute(
+    '''
+    SELECT * FROM item
+    '''
+)
+value = cursor.fetchall()
+
 cursor.execute("DROP TABLE allowed_signup")
 cursor.execute('''
     CREATE TABLE signup_token(
@@ -74,6 +129,7 @@ cursor.execute("INSERT INTO signup_token VALUES(?, ?)", ('2018202133', 1, ))
 """
 cursor.execute("INSERT INTO activity_participate VALUES(1, 2, '114514')")
 value = cursor.fetchone()
+
 print(value)
 conn.commit()
 conn.close()

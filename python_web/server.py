@@ -322,6 +322,13 @@ def get_member_detail(person_id):
     
     conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
+    cursor.execute('SELECT * FROM person_info WHERE id = ?',(person_id,))
+    values = cursor.fetchone()
+    print(type(values))
+    if(type(values) == type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/member_list"</script>'
 
     cursor.execute("SELECT * FROM person_info WHERE id = ?", (person_id,))
     value = cursor.fetchall()
@@ -372,6 +379,13 @@ def edit_member_detail(person_id):
         return redirect('/member_list')
     conn = sqlite3.connect("../../RUCCA.db")
     cursor = conn.cursor()
+    cursor.execute('SELECT * FROM person_info WHERE id = ?',(person_id,))
+    values = cursor.fetchone()
+    print(type(values))
+    if(type(values) == type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/member_list"</script>'
     cursor.execute('''
         SELECT *
         FROM person_info
@@ -407,6 +421,13 @@ def modify_member_detail(person_id):
         return redirect('/member_list')
     conn = sqlite3.connect("../../RUCCA.db")
     cursor = conn.cursor()
+    cursor.execute('SELECT * FROM person_info WHERE id = ?',(person_id,))
+    values = cursor.fetchone()
+    print(type(values))
+    if(type(values) == type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/member_list"</script>'
     if(request.form['identification']=='other'):
         if(request.form['job']=='会长'):
             cursor.execute(
@@ -900,6 +921,13 @@ def modify_issue_detail(issue_id):
 def modify_detail(issue_id):
     conn = sqlite3.connect("../../RUCCA.db")
     cursor = conn.cursor()
+    cursor.execute('SELECT * FROM issue WHERE id = ?',(issue_id,))
+    values = cursor.fetchone()
+    print(type(values))
+    if(type(values) == type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/issue_center"</script>'
     #身份验证为host或admin才可以修改
     cursor.execute("SELECT * FROM issue WHERE id = ?", (issue_id,))
     value = cursor.fetchone()
@@ -1465,6 +1493,13 @@ def get_activity_from_center():
 def activity_detail(act_id):
     conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
+    cursor.execute('SELECT * FROM activity WHERE id = ?',(act_id,))
+    values = cursor.fetchone()
+    print(type(values))
+    if(type(values) == type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/activity_center"</script>'
     cursor.execute(
         '''
         SELECT *
@@ -1521,9 +1556,16 @@ def activity_detail(act_id):
 @app.route('/activity_center/<int:act_id>', methods=['POST'])
 @login_required
 def delete_activity(act_id):
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM activity WHERE id = ?',(act_id,))
+    values = cursor.fetchone()
+    print(type(values))
+    if(type(values) == type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/activity_center"</script>'
     if(request.form['action_type']=='drop'):
-        conn = sqlite3.connect('../../RUCCA.db')
-        cursor = conn.cursor()
         cursor.execute(
             '''
             SELECT host_id
@@ -1552,8 +1594,6 @@ def delete_activity(act_id):
             conn.close()
         return redirect('/activity_center')
     elif(request.form['action_type']=='part'):
-        conn = sqlite3.connect('../../RUCCA.db')
-        cursor = conn.cursor()
         cursor.execute(
             '''
             INSERT INTO activity_participate VALUES(?, ?, 'Soudayo!')
@@ -1564,8 +1604,6 @@ def delete_activity(act_id):
         
         return redirect('/activity_center/'+str(act_id))
     elif(request.form['action_type']=='quit'):
-        conn = sqlite3.connect('../../RUCCA.db')
-        cursor = conn.cursor()
         cursor.execute(
             '''
             DELETE FROM activity_participate 
@@ -1891,6 +1929,13 @@ def edit_activity(act_id):
         return redirect('/activity_center')
     conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
+    cursor.execute('SELECT * FROM activity WHERE id = ?',(act_id,))
+    values = cursor.fetchone()
+    print(type(values))
+    if(type(values) == type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/activity_center"</script>'
     cursor.execute(
         '''
         SELECT *
@@ -1947,6 +1992,17 @@ def save_activity(act_id):
         redirect('/activity_center')
     conn = sqlite3.connect('../../RUCCA.db')
     cursor = conn.cursor()
+    cursor.execute('SELECT * FROM activity WHERE id = ?',(act_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return'''
+        <script>
+            alert("Invalid url!");
+            window.location.herf='/activity_center'
+        </script>
+        '''
     cursor.execute(
         '''
         UPDATE activity
@@ -2157,6 +2213,476 @@ def post_reply_form(reply_id):
     conn.commit()
     conn.close()
     return redirect('/reply')
+
+@app.route('/finance_center', methods=['GET'])
+@login_required
+def get_finance_data_from_center():
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/finance_center')
+    else:
+        return redirect('/finance_center?' + '&'.join(new_index_list))
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("pragma table_info(bill)")
+    value = cursor.fetchall()
+    args_list = []
+    for i in value:
+        args_list.append(i[1])
+
+    args_dict = {}
+    for key in args_list:
+        if request.args.get(key) is not None:
+            args_dict[key] = request.args.get(key)
+    
+    # 构建SQL查询语句
+    sql_query = 'SELECT {} FROM bill '.format(','.join(args_list))
+    args_l = []
+    if len(args_dict) > 0:
+        sql_query += 'WHERE '
+        query_list = []
+        for key in args_dict.keys():
+            query_list.append(key + ' = ?')
+            args_l.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY id ASC'
+
+    # 查询部分
+    if len(args_dict) > 0:
+        cursor.execute(sql_query, args_l)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+    
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                return redirect('/finance_center')
+        else:
+            return redirect('/finance_center')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+    # 数据转换：将id转换为用户名，将1/0转换为是/否
+    for i in range(len(page_item)):
+        tmp = list(page_item[i])
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+        ''', (tmp[2],))
+        value = cursor.fetchone()
+        if value is None:
+            tmp[2] = 'None'
+        else:
+            tmp[2] = value[0]
+        cursor.execute('''
+            SELECT name
+            FROM activity
+            WHERE id = ?
+        ''', (tmp[4],))
+        value = cursor.fetchone()
+        if value is None:
+            tmp[4] = 'None'
+        else:
+            tmp[4] = value[0]
+        page_item[i] = tmp
+        
+    sum = cursor.execute('SELECT SUM(count) FROM bill').fetchone()[0]
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+    args_list=['账单号','金额','负责人','详情描述','所属活动']
+    return render_template('finance_center.html', input=args_list, bills=page_item, page_info=page_info, account_re=sum)
+
+@app.route('/finance_center/create', methods=['GET'])
+@login_required
+def edit_new_bill():
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    return render_template('bill_create.html')
+
+@app.route('/finance_center/create', methods=['POST'])
+@login_required
+def create_new_bill():
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM person_info WHERE username = ?',(request.form['responsible_person'],))
+    values = cursor.fetchall()
+    if (type(values)!=type(None)):
+        responsible_person_id = values[0]
+    else:
+        conn.commit()
+        conn.close()
+        return '''
+        <script>
+            alert("账单负责人不存在..");
+            window.location.href = "/finance_center/create";
+        </script>
+        '''
+    if request.form['rel_act'] != '':
+        cursor.execute('SELECT id FROM activity WHERE name = ?',(request.form['rel_act'],))
+        values = cursor.fetchone()
+        if (type(values)!=type(None)):
+            responsible_activity_id = values[0]
+        else:
+            responsible_activity_id = 0
+    cursor.execute('INSERT INTO bill(count,responsible_person,description,activity_id) VALUES(?,?,?,?)',
+    (int(request.form['count']),responsible_person_id,request.form['description'],responsible_activity_id,))
+    conn.commit()
+    conn.close()
+    return redirect('/finance_center')
+
+@app.route('/finance_center/<int:bill_id>', methods=['GET'])
+@login_required
+def bill_detail(bill_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM bill WHERE id = ?',(bill_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/finance_center"</script>'
+    else:
+        bill_dict={
+            'id': values[0],
+            'count': values[1],
+            'responsible_person': values[2],
+            'description': values[3],
+            'rel_act': values[4]
+        }
+        cursor.execute('SELECT username FROM person_info WHERE id = ?',(bill_dict['responsible_person'],))
+        bill_dict['responsible_person']=cursor.fetchone()[0]
+        cursor.execute('SELECT name FROM activity WHERE id = ?',(bill_dict['rel_act'],))
+        values = cursor.fetchone()
+        if(type(values)==type(None)):
+            bill_dict['rel_act']='None'
+        else:
+            bill_dict['rel_act']=values[0]
+        identification = 1
+        if current_user.check_minister() == False:
+            identification = 0
+        return render_template('bill_detail.html', bill=bill_dict, is_minister=identification)
+
+@app.route('/finance_center/<int:bill_id>', methods=['POST'])
+@login_required
+def bill_delete(bill_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/finance_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM bill WHERE id = ?',(bill_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/finance_center"</script>'
+    else:
+        cursor.execute('DELETE FROM bill WHERE id = ?',(bill_id,))
+        conn.commit()
+        conn.close()
+        return redirect('/finance_center')
+
+@app.route('/finance_center/modify/<int:bill_id>', methods=['GET'])
+@login_required
+def edit_bill_detail(bill_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/finance_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM bill WHERE id = ?',(bill_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/finance_center"</script>'
+    else:
+        bill_dict={
+            'id': values[0],
+            'count': values[1],
+            'responsible_person': values[2],
+            'description': values[3],
+            'rel_act': values[4]
+        }
+        cursor.execute('SELECT username FROM person_info WHERE id = ?',(bill_dict['responsible_person'],))
+        bill_dict['responsible_person']=cursor.fetchone()[0]
+        cursor.execute('SELECT name FROM activity WHERE id = ?',(bill_dict['rel_act'],))
+        values = cursor.fetchone()
+        if(type(values)==type(None)):
+            bill_dict['rel_act']='None'
+        else:
+            bill_dict['rel_act']=values[0]
+        return render_template('bill_modify.html', bill=bill_dict)
+
+@app.route('/finance_center/modify/<int:bill_id>', methods=['POST'])
+@login_required
+def modify_bill_detail(bill_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    if current_user.check_minister() == False:
+        return redirect('/finance_center')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM bill WHERE id = ?',(bill_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/finance_center"</script>'
+    else:
+        cursor.execute('SELECT id FROM person_info WHERE username = ?',(request.form['rep_person'],))
+        values = cursor.fetchone()
+        if (type(values)!=type(None)):
+            responsible_person_id = values[0]
+        else:
+            conn.commit()
+            conn.close()
+            return '''
+            <script>
+                alert("账单负责人不存在..");
+                window.location.href = "/finance_center";
+            </script>
+            '''
+        if request.form['rel_act'] != '':
+            cursor.execute('SELECT id FROM activity WHERE name = ?',(request.form['rel_act'],))
+            values = cursor.fetchone()
+            if len(values) > 0:
+               responsible_activity_id = values[0]
+            else:
+                responsible_activity_id = 0
+        cursor.execute(
+            '''
+            UPDATE bill
+            SET
+                responsible_person = ?,
+                count = ?,
+                description = ?,
+                activity_id = ?
+            WHERE id = ?
+            ''',(responsible_person_id,int(request.form['count']),request.form['description'],responsible_activity_id,bill_id,)
+        )
+        conn.commit()
+        conn.close()
+        return redirect('/finance_center/'+str(bill_id))
+
+@app.route('/item_center', methods=['GET'])
+@login_required
+def get_item_info_from_center():
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    
+    # 处理url，重定向至正确的最简url
+    current_url = str(request.full_path)
+    indexes = current_url.partition('?')[2]
+    if indexes == '':
+        index_list = []
+    else:
+        index_list = indexes.split('&')
+    new_index_list = []
+    for i in index_list:
+        if i.find('=') == -1 or i.endswith('=') or i.count('=') > 1:
+            continue
+        new_index_list.append(i)
+    if len(index_list) == 0 or len(index_list) == len(new_index_list):
+        pass
+    elif len(new_index_list) == 0:
+        return redirect('/finance_center')
+    else:
+        return redirect('/finance_center?' + '&'.join(new_index_list))
+
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+
+    cursor.execute("pragma table_info(item)")
+    value = cursor.fetchall()
+    args_list = []
+    for i in value:
+        args_list.append(i[1])
+
+    args_dict = {}
+    for key in args_list:
+        if request.args.get(key) is not None:
+            args_dict[key] = request.args.get(key)
+    
+    # 构建SQL查询语句
+    sql_query = 'SELECT {} FROM item '.format(','.join(args_list))
+    args_l = []
+    if len(args_dict) > 0:
+        sql_query += 'WHERE '
+        query_list = []
+        for key in args_dict.keys():
+            query_list.append(key + ' = ?')
+            args_l.append(args_dict[key])
+        sql_query += ' AND '.join(query_list)
+    sql_query += ' ORDER BY id ASC'
+
+    # 查询部分
+    if len(args_dict) > 0:
+        cursor.execute(sql_query, args_l)
+        value = cursor.fetchall()
+    else:
+        cursor.execute(sql_query)
+        value = cursor.fetchall()
+    
+    # 页面显示设置&翻页参数设置
+    all_page_num = 0
+    if len(value) % 10 != 0:
+        all_page_num = len(value) // 10 + 1
+    else:
+        all_page_num = len(value) / 10
+
+    page_num = 1
+    recv_page_num = request.args.get('page')
+    if recv_page_num is not None:
+        if str(recv_page_num).isdigit():
+            page_num = int(recv_page_num)
+            if page_num < 1 or page_num > all_page_num:
+                return redirect('/finance_center')
+        else:
+            return redirect('/finance_center')
+    page_item = value[(page_num - 1) * 10 : page_num * 10]
+    # 数据转换：将id转换为用户名
+    for i in range(len(page_item)):
+        tmp = list(page_item[i])
+        cursor.execute('''
+            SELECT username
+            FROM person_info
+            WHERE id = ?
+        ''', (tmp[6],))
+        value = cursor.fetchone()
+        if value is None:
+            tmp[6] = 'None'
+        else:
+            tmp[6] = value[0]
+        status_dict = {1:'使用中',2:'已弃用'}
+        tmp[2]=status_dict[tmp[2]]
+        page_item[i] = tmp
+        
+    count= cursor.execute('SELECT COUNT(id) FROM item').fetchone()[0]
+    conn.commit()
+    conn.close()
+
+    # 翻页保持url相对不变
+    page_info = static_url(current_url, page_num, all_page_num, len(index_list))
+    args_list=['财物编号','财物名称','财物状态','财物描述','收录时间','弃用时间','负责人','所属账单编号']
+    return render_template('item_center.html', input=args_list, items=page_item, page_info=page_info, account_re=count)
+
+@app.route('/item_center/create', methods=['GET'])
+@login_required
+def edit_new_item():
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    return render_template('item_add.html')
+
+@app.route('/item_center/create', methods=['POST'])
+@login_required
+def add_new_item():
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    import time
+    localtime = time.localtime(time.time())
+    date = '{}-{}-{}'.format(localtime.tm_year,localtime.tm_mon,localtime.tm_mday,)
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM person_info WHERE username = ?',(request.form['rep_person'],))
+    values = cursor.fetchone()
+    if (type(values)!=type(None)):
+            responsible_person_id = values[0]
+    else:
+        conn.commit()
+        conn.close()
+        return '''
+        <script>
+            alert("财物负责人不存在..");
+            window.location.href = "/finance_center";
+        </script>
+        '''   
+    cursor.execute('SELECT * FROM bill WHERE id = ?',(request.form['rel_bill']))
+    values = cursor.fetchone()
+    if (type(values)!=type(None)):
+        pass
+    else:
+        conn.commit()
+        conn.close()
+        return '''
+        <script>
+            alert("相关账单不存在..");
+            window.location.href = "/finance_center";
+        </script>
+        '''
+    status_dict = {'使用中':1,'已弃用':2}
+    cursor.execute(
+        '''
+        INSERT INTO item(name,status,description,get_date,abandon_date,rep_person,rel_bill)
+        VALUES(?,?,?,?,?,?,?)
+        ''',(
+            request.form['name'],
+            status_dict[request.form['status']],
+            request.form['description'],
+            date,
+            None,
+            responsible_person_id,
+            request.form['rel_bill'],
+        )
+    )
+    item_id = cursor.execute('SELECT COUNT(id) FROM item').fetchone()[0]
+    conn.commit()
+    conn.close()
+    return redirect('/item_center')
+
+@app.route('/item_center/<int:item_id>', methods=['GET'])
+@login_required
+def item_detail(item_id):
+    if current_user.check_admin() == False:
+        return redirect('/index')
+    conn = sqlite3.connect('../../RUCCA.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM item WHERE id = ?',(item_id,))
+    values = cursor.fetchone()
+    if(type(values)==type(None)):
+        conn.commit()
+        conn.close()
+        return '<script>alert("Invalid url!");window.location.href = "/item_center"</script>'
+    else:
+        return redirect('/index')
 
 if __name__ == '__main__':
     app.run(debug=True)

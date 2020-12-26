@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>新建账单</p>
+    </div>
+    <form action="/finance_center/create" method="POST" id="new_bill">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>负责人用户名</th>
+                    <td><input maxlength="20" type="text" name="responsible_person" value=""></td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>账单金额(请输入以分为单位的整数)</th>
+                    <th><input maxlength="20" type="text" name="count" value=""></th>
+                </tr>
+                <tr>
+                    <th>相关活动名称</th>
+                    <th><input maxlength="20" type="text" name="rel_act" value=""></th>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>账单描述</th>
+                </tr>
+                <tr>
+                    <td><textarea name="description" cols="30" rows="10" maxlength="50" ></textarea>></td>
+                </tr>
+           </table>
+        </div> 
+    </form>
+    <div class="section">
+        <a href="/finance_center"><button class="submit" style="float: right;">放弃账单创建</button></a>
+        <button type="submit" class="submit" form="new_bill" style="text-align: center;">创建新账单</button>
+    </div>
+</body>

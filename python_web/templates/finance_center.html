@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance_center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>财务中心</p>
+    </div>
+    <div class="section" style="text-align: center;">
+        <table>
+            <a href="/index"><button class="submit" style="float: left;">返回主界面</button></a>
+            <a href="/item_center"><button class="submit" style="float: right;">前往财物中心</button></a>
+            <p>当前账面余额：{{ account_re }}</p>
+        </table>
+    </div>
+    <div class="section">
+        <form action="/finance_center" method="GET" id="search" style="text-align: center;">
+            {% for arg in input %}
+                <p>{{ arg }}:<input type="text" name="{{ arg }}" style="text-align: center;"></p>
+            {% endfor %}
+        </form>
+    </div>
+    <div class="section" style="text-align: center;">
+        <button type="submit" class="submit" form="search">查询</button>
+        <button type="reset" class="submit" form="search">重置</button>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                {% for arg in input %}
+                    <th>{{ arg }}</th>
+                {% endfor %}
+                <th>前往修改</th>
+            </tr>
+            {% for bill in bills %}
+                <tr>
+                    {% for i in bill %}
+                    <td>{{ i }}</td>
+                    {% endfor %}
+                    <td><a href="/finance_center/{{ bill[0] }}">前往</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="section">
+        <table>
+            <tr>
+                <td><a href={{ page_info.first_page_url }}>首页</a></td>
+                <td><a href={{ page_info.prev_page_url }}>上一页</a></td>
+                <td><a href={{ page_info.next_page_url }}>下一页</a></td>
+                <td><a href={{ page_info.end_page_url }}>末页</a></td>
+            </tr>
+        </table>
+        <p>第{{ page_info.cur_page_num }}页，共{{ page_info.max_page_num }}页。</p>
+        <p>前往<input type="text" name="page" form="search">页<button type="submit" class="submit" form="search">GO</button></p>
+    </div>
+    <div class="section"style="text-align: center;">
+        <a href="/finance_center/create"><button class="submit" >创建新账单</button></a>
+    </div>
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>

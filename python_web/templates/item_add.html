@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item_Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>添加财物</p>
+    </div>
+    <form action="/item_center/create" method="POST" id="new_bill">
+        <div class="section">
+            <table>
+                <tr>
+                    <th>负责人用户名</th>
+                    <td><input maxlength="20" type="text" name="rep_person" value=""></td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>财物名称</th>
+                    <th><input maxlength="20" type="text" name="name" value=""></th>
+                </tr>
+                <tr>
+                    <th>财物状态(使用中/已弃用)</th>
+                    <th><input maxlength="20" type="text" name="status" value=""></th>
+                </tr>
+                <tr>
+                    <th>相关账单编号</th>
+                    <th><input type="number" name="rel_bill"></th>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>财物描述</th>
+                </tr>
+                <tr>
+                    <td><textarea name="description" cols="30" rows="10" maxlength="50" ></textarea>></td>
+                </tr>
+           </table>
+        </div> 
+    </form>
+    <div class="section">
+        <a href="/item_center"><button class="submit" style="float: right;">放弃财物添加</button></a>
+        <button type="submit" class="submit" form="new_bill" style="text-align: center;">添加新财物</button>
+    </div>
+</body>
