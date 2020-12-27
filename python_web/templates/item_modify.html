@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item_Modify:NO.{{ item.id }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Handlee">
+</head>
+<body>
+    <div id="header" class="section">
+        <p>财物详情：第{{ item.id }}号</p>
+    </div>
+    <div class="section" style="float: left;">
+        <a href="/item_center/{{ item.id }}"><button type="submit" class="submit">取消修改</button></a>
+    </div>
+    <form class="section" action="/item_center/modify/{{ item.id }}" id="item_modify" method="POST">
+        <table>
+            <tr>
+                <th>名称</th>
+                <th>值</th>
+            </tr>
+            <tr>
+                <td>财物id</td>
+                <td>{{ item.id }}</td>
+            </tr>
+            <tr>
+                <td>财物名称</td>
+                <td><input type="text" name="name" value="{{ item.name }}"></td>
+            </tr>
+            <tr>
+                <td>财物状态</td>
+                <td><input type="text" name="status" value="{{ item.status }}"></td>
+            </tr>
+            <tr>
+                <td>负责人</td>
+                <td><input type="text" name="rep_person" value="{{ item.rep_person }}"></td>
+            </tr>
+            <tr>
+                <td>收录日期</td>
+                <td><input type="date" name="get_date" value="{{ item.get_date }}"></td>
+            </tr>
+            <tr>
+                <td>弃用日期</td>
+                <td><input type="date" name="abandon_date" value="{{ item.abandon_date }}"></td>
+            </tr>
+            <tr>
+                <td>相关账单</td>
+                <td><input type="number" name="rel_bill" value="{{ item.rel_bill }}"></td>
+            </tr>
+            <tr>
+                <td>详情描述</td>
+                <td><textarea name="description" cols="30" rows="10">{{ item.description }}</textarea></td>
+            </tr>
+        </table>
+    </div>
+    {% if is_minister == 1 %}
+        <div class="section" style="text-align: center;">
+            <button type="submit" class="submit" form="item_modify">保存修改</button>
+        </div>
+    {% endif %}
+    <div class="copyright">
+        &copy; 2020 RUCCA. All rights reserved.
+    </div>
+</body>
+</html>
