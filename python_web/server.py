@@ -45,10 +45,18 @@ def signin():
 
     user = User(name)
     if user.verify_password(passwd):
-        login_user(user)
+        if remember_me is not None:
+            time = timedelta(weeks=7)
+            login_user(user, remember=True, duration=time)
+        else:
+            login_user(user)
         return redirect('/index')
     else:
-        return '<h3>Bad username or password.</h3>'
+        return '<script>alert("用户名或密码错误");window.location.href = "/signin"</script>'
+
+@app.route('/intro', methods=['GET', 'POST'])
+def intro():
+    return render_template('intro.html')
 
 @app.route('/index', methods=['GET'])
 @login_required

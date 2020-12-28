@@ -83,7 +83,7 @@ cursor.execute(
     SELECT * FROM bill 
     '''
 )
-"""
+
 cursor.execute(
     '''
     CREATE TABLE item(
