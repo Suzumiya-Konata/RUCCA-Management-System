@@ -46,7 +46,7 @@ def signin():
     user = User(name)
     if user.verify_password(passwd):
         if remember_me is not None:
-            time = timedelta(weeks=7)
+            time = timedelta(weeks=1)
             login_user(user, remember=True, duration=time)
         else:
             login_user(user)
@@ -2349,7 +2349,7 @@ def create_new_bill():
     cursor.execute('SELECT id FROM person_info WHERE username = ?',(request.form['responsible_person'],))
     values = cursor.fetchall()
     if (type(values)!=type(None)):
-        responsible_person_id = values[0]
+        responsible_person_id = values[0][0]
     else:
         conn.commit()
         conn.close()
@@ -2366,6 +2366,7 @@ def create_new_bill():
             responsible_activity_id = values[0]
         else:
             responsible_activity_id = 0
+    print((int(request.form['count']),responsible_person_id,request.form['description'],responsible_activity_id,))
     cursor.execute('INSERT INTO bill(count,responsible_person,description,activity_id) VALUES(?,?,?,?)',
     (int(request.form['count']),responsible_person_id,request.form['description'],responsible_activity_id,))
     conn.commit()

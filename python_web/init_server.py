@@ -56,7 +56,7 @@ cursor.execute('''
             REFERENCES activity(id)
     )
 ''')
-
+"""
 # 获取表中的信息
 #cursor.execute('DROP TABLE bill')
 cursor.execute(
@@ -112,7 +112,7 @@ cursor.execute(
     '''
 )
 value = cursor.fetchall()
-
+"""
 cursor.execute("DROP TABLE allowed_signup")
 cursor.execute('''
     CREATE TABLE signup_token(
@@ -126,10 +126,10 @@ cursor.execute('''
 cursor.execute("INSERT INTO signup_token VALUES(?, ?)", ('2018202059', 2, ))
 cursor.execute("INSERT INTO signup_token VALUES(?, ?)", ('2018202090', 5, ))
 cursor.execute("INSERT INTO signup_token VALUES(?, ?)", ('2018202133', 1, ))
-"""
+
 cursor.execute("INSERT INTO activity_participate VALUES(1, 2, '114514')")
 value = cursor.fetchone()
-
+"""
 print(value)
 conn.commit()
 conn.close()
